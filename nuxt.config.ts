@@ -2,8 +2,6 @@ import { Configuration } from '@nuxt/types';
 const config = require('config');
 
 const client: { host: string; port: number } = config.get('client');
-const server: { host: string; port: number } = config.get('server');
-const url = `http://${server.host}:${server.port}/graphql`;
 
 const nuxtConfig: Configuration = {
     /*
@@ -56,40 +54,7 @@ const nuxtConfig: Configuration = {
     /*
      ** Nuxt.js modules
      */
-    modules: [
-        '@nuxtjs/pwa',
-        '@nuxtjs/style-resources',
-        '@nuxtjs/auth',
-        '@nuxtjs/apollo'
-    ],
-    /*
-     ** Apollo options
-     */
-    apollo: {
-        defaultOptions: {
-            $query: {
-                loadingKey: 'loading'
-            }
-        },
-        clientConfigs: {
-            default: {
-                httpEndpoint: url
-            }
-        }
-    },
-    /*
-     ** Auth configuration
-     */
-    auth: {
-        strategies: {
-            localGraphQL: {
-                _scheme: '~/apollo/scheme'
-            }
-        },
-        watchLoggedIn: true,
-        rewriteRedirects: false,
-        resetOnError: true
-    },
+    modules: ['@nuxtjs/pwa', '@nuxtjs/style-resources'],
     /*
      ** Build configuration
      */
@@ -107,9 +72,7 @@ const nuxtConfig: Configuration = {
     /*
      ** Router configuration
      */
-    router: {
-        middleware: ['auth']
-    }
+    router: {}
 };
 
 export default nuxtConfig;

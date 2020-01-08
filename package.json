@@ -15,13 +15,10 @@
     },
     "dependencies": {
         "@nuxt/typescript-runtime": "^0.3.3",
-        "@nuxtjs/apollo": "^4.0.0-rc19",
-        "@nuxtjs/auth": "^4.8.5",
         "@nuxtjs/pwa": "^3.0.0-beta.19",
         "ant-design-vue": "^1.4.10",
         "apollo-link-error": "^1.1.12",
         "config": "^3.2.4",
-        "graphql-tag": "^2.10.1",
         "js-cookie": "^2.2.1",
         "lodash": "^4.17.15",
         "nuxt": "^2.11.0",
