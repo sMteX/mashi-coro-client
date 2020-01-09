@@ -2,6 +2,8 @@ import { Configuration } from '@nuxt/types';
 const config = require('config');
 
 const client: { host: string; port: number } = config.get('client');
+const server: { host: string; port: number } = config.get('server');
+const url = `http://${server.host}:${server.port}`;
 
 const nuxtConfig: Configuration = {
     /*
@@ -54,7 +56,24 @@ const nuxtConfig: Configuration = {
     /*
      ** Nuxt.js modules
      */
-    modules: ['@nuxtjs/pwa', '@nuxtjs/style-resources'],
+    modules: [
+        '@nuxtjs/pwa',
+        '@nuxtjs/style-resources',
+        // Doc: https://github.com/richardeschloss/nuxt-socket-io
+        'nuxt-socket-io'
+    ],
+    /*
+     ** Socket.IO config
+     */
+    io: {
+        sockets: [
+            {
+                name: 'evennts',
+                default: true,
+                url
+            }
+        ]
+    },
     /*
      ** Build configuration
      */

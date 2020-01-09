@@ -22,6 +22,7 @@
         "js-cookie": "^2.2.1",
         "lodash": "^4.17.15",
         "nuxt": "^2.11.0",
+        "nuxt-socket-io": "^1.0.12",
         "stylelint-scss": "^3.13.0",
         "vue-property-decorator": "^8.3.0"
     },
