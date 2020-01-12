@@ -25,7 +25,9 @@
         },
         "types": [
             "@types/node",
-            "@nuxt/types"
+            "@nuxt/types",
+            "@nuxtjs/axios",
+            "@types/socket.io-client"
         ]
     },
     "exclude": [

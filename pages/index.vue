@@ -7,7 +7,7 @@
             div.links
                 a(href="https://nuxtjs.org/", target="_blank", class="button--green") Documentation
                 a(href="https://github.com/nuxt/nuxt.js", target="_blank", class="button--grey") GitHub
-                a(href="#", class="button--grey" v-on:click="sendEvent") Send Event
+                nuxt-link(to="/communication", class="button--grey") Communication tester
 </template>
 
 <script lang="ts">
@@ -22,30 +22,7 @@ import Logo from '~/components/Logo.vue';
         title: 'Home'
     }
 })
-export default class Homepage extends Vue {
-    private socket: any;
-
-    mounted() {
-        // @ts-ignore
-        this.socket = this.$nuxtSocket({
-            reconnection: true
-        });
-        this.setupHandlers();
-    }
-
-    sendEvent() {
-        alert('in handler');
-        this.socket.emit('next', 0, (response: any) =>
-            console.log('response', response)
-        );
-    }
-
-    setupHandlers() {
-        this.socket.on('msgToClient', (message: any) =>
-            console.log('msgToClient', message)
-        );
-    }
-}
+export default class Homepage extends Vue {}
 </script>
 
 <style lang="scss">
