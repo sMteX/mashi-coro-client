@@ -4,10 +4,19 @@
             logo
             div.links
                 a(href="#", class="button--grey" v-on:click="createGame") Create game
-                a(href="#", class="button--grey" v-on:click="openLink") Open link
+                a(href="#", class="button--grey" v-on:click="joinGame") Join game
                 a(href="#" class="button--grey" v-on:click="confirmReady") Confirm ready check
                 a(href="#" class="button--grey" v-on:click="declineReady") Decline ready check
                 a(href="#" class="button--grey" v-on:click="simulateCloseTab") Simulate close tab
+            div
+                h3 Players:
+                ul
+                    li(v-for="player in players")
+                        span(v-bind:style="{ color: (player.ready ? 'green': 'red')}") {{ player.name }}
+                        | - {{ player.id }}
+            div
+                ul
+                    li(v-for="message in messages") {{ message }}
 </template>
 
 <script lang="ts">
@@ -17,7 +26,11 @@ import { events } from '~/utils/constants';
 const io = require('socket.io-client');
 
 const { lobby: lobbyEvents } = events;
-const serverUrl = 'http://localhost:3001'; // TODO: extract?
+interface PlayerPair {
+    id: string;
+    name: string;
+    ready: boolean;
+}
 
 @Component({
     components: {
@@ -29,74 +42,111 @@ const serverUrl = 'http://localhost:3001'; // TODO: extract?
 })
 export default class Homepage extends Vue {
     private socket!: SocketIOClient.Socket;
-    private socket2!: SocketIOClient.Socket;
 
-    mounted() {
+    private players: PlayerPair[] = [];
+    private messages: string[] = [];
+
+    mounted () {
         // TODO: actually point the sockets to the lobby namespace
-        // this.socket = io.connect(`${serverUrl}/${lobbyEvents.namespaceName}`);
-        // this.setupHandlers();
+        this.socket = io.connect(
+            `${process.env.serverUrl}/${lobbyEvents.namespaceName}`
+        );
+        this.setupHandlers();
     }
 
-    async createGame() {
+    log (message: string) {
+        this.messages.push(message);
+        console.log(message);
+    }
+
+    async createGame () {
         // TODO: step 1: API POST to server/api/createGame
         const slug: string = await this.$axios.$post(
-            `${serverUrl}/api/createGame`
+            `${process.env.serverUrl}/api/createGame`
         );
-        console.log(`Received game slug: ${slug}`);
+        this.log(`Game created - ${slug}`);
+        const name = 'Chizu';
         // TODO: step 3: open connection to lobby?
-        // this.socket.emit(lobbyEvents.output.PLAYER_ENTER, {});
+        this.socket.emit(lobbyEvents.output.PLAYER_ENTER, {
+            playerName: name,
+            game: slug
+        });
+        this.players.push({ id: this.socket.id, name, ready: false });
     }
 
-    openLink() {
-        // const slug = prompt('Enter the game slug');
-        //
-        // // TODO: step 4: simulate other players entering the game - POST to server/api/validateGame
-        //
-        // const name = prompt('Enter your name');
-        //
-        // // TODO: open another connection to lobby as a separate player
-        // this.socket2 = io.connect(`${serverUrl}/${lobbyEvents.namespaceName}`, {
-        //     forceNew: true
-        // });
-        // this.socket2.emit(lobbyEvents.output.PLAYER_ENTER, {});
+    async joinGame () {
+        const slug = prompt('Enter the game slug');
+
+        // TODO: step 4: simulate other players entering the game - POST to server/api/validateGame
+        const validGame = await this.$axios.$post(`${process.env.serverUrl}/api/validateGame`, slug);
+
+        if (!validGame) {
+            return;
+        }
+
+        const name = prompt('Enter your name');
+
+        this.socket.emit(lobbyEvents.output.PLAYER_ENTER, {
+            playerName: name,
+            game: slug
+        });
     }
 
-    confirmReady() {
+    confirmReady () {
         // TODO: emit confirm ready check
-        // this.socket.emit(lobbyEvents.output.PLAYER_READY_STATUS, {});
+        this.socket.emit(lobbyEvents.output.PLAYER_READY_STATUS, {
+            ready: true
+        });
     }
 
-    declineReady() {
+    declineReady () {
         // TODO: emit decline ready check
-        // this.socket.emit(lobbyEvents.output.PLAYER_READY_STATUS, {});
+        this.socket.emit(lobbyEvents.output.PLAYER_READY_STATUS, {
+            ready: false
+        });
     }
 
-    simulateCloseTab() {
+    simulateCloseTab () {
         // TODO: if during the ready check, emit that player left
-        // this.socket.emit(lobbyEvents.output.PLAYER_LEFT, {});
+        this.socket.emit(lobbyEvents.output.PLAYER_LEFT);
     }
 
-    sendEvent() {
+    sendEvent () {
         alert('in handler');
         this.socket.emit('next', 0, (response: any) =>
             console.log('response', response)
         );
     }
 
-    setupHandlers() {
-        // this.socket
-        //     .on(lobbyEvents.input.GAME_PLAYABLE, () => {
-        //         // TODO: step 6: when game is playable, react somehow
-        //     })
-        //     .on(lobbyEvents.input.PLAYER_ENTERED_LOBBY, () => {
-        //         // TODO: handle when another player enters lobby
-        //     })
-        //     .on(lobbyEvents.input.PLAYER_CHANGED_READY_STATUS, () => {
-        //         // TODO: handle when another player confirms/cancels ready check
-        //     })
-        //     .on(lobbyEvents.input.PLAYER_LEFT_LOBBY, () => {
-        //         // TODO: handle when another player leaves lobby
-        //     });
+    setupHandlers () {
+        this.socket
+            .on(lobbyEvents.input.PLAYER_ENTERED_LOBBY, (data: any) => {
+                // TODO: handle when another player enters lobby
+                this.log(`New player entered the game: ${data.playerName} - id: ${data.playerId}`);
+                this.players.push({ id: data.playerId, name: data.playerName, ready: false });
+            })
+            .on(lobbyEvents.input.GAME_PLAYABLE, () => {
+                // TODO: step 6: when game is playable, react somehow
+                this.log('Game is playable now');
+            })
+            .on(lobbyEvents.input.ALL_READY, () => {
+                this.log('All players ready');
+            })
+            .on(lobbyEvents.input.PLAYER_CHANGED_READY_STATUS, (data: any) => {
+                // TODO: handle when another player confirms/cancels ready check
+                const player = this.players.find(player => player.id === data.playerId);
+                if (!player) {
+                    return;
+                }
+                player.ready = data.newStatus;
+                this.log(`Player ${player.name} changed ready status to ${data.newStatus}`);
+            })
+            .on(lobbyEvents.input.PLAYER_LEFT_LOBBY, (data: any) => {
+                // TODO: handle when another player leaves lobby
+                const name = this.players.find(player => player.id === data.playerId)?.name || 'unknown';
+                this.log(`Player ${name} left the lobby`);
+                this.players = this.players.filter(player => player.id !== data.playerId);
+            });
     }
 }
 </script>

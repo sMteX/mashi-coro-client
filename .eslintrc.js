@@ -6,8 +6,7 @@ module.exports = {
     },
     extends: [
         '@nuxtjs/eslint-config-typescript',
-        'plugin:vue/recommended',
-        'plugin:prettier/recommended'
+        'plugin:vue/recommended'
     ],
     // required to lint *.vue files
     plugins: [
@@ -18,7 +17,6 @@ module.exports = {
         'semi': [2, 'always'],
         'no-console': 'off',
         'vue/max-attributes-per-line': 'off',
-        'prettier/prettier': ['error', { 'semi': true }],
         "indent": ["error", 4],
         "vue/html-indent": ["error", 4],
         "vue/script-indent": ["error", 4],
