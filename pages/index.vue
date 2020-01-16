@@ -7,7 +7,7 @@
             div.links
                 a(href="https://nuxtjs.org/", target="_blank", class="button--green") Documentation
                 a(href="https://github.com/nuxt/nuxt.js", target="_blank", class="button--grey") GitHub
-                nuxt-link(to="/communication", class="button--grey") Communication tester
+                nuxt-link(to="/communication", class="button--grey") Game lobby
 </template>
 
 <script lang="ts">

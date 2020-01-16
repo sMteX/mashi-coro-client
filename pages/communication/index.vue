@@ -43,6 +43,7 @@ interface PlayerPair {
 export default class Homepage extends Vue {
     private socket!: SocketIOClient.Socket;
 
+    private gameSlug?: string;
     private players: PlayerPair[] = [];
     private messages: string[] = [];
 
@@ -59,17 +60,21 @@ export default class Homepage extends Vue {
         console.log(message);
     }
 
+    get self () {
+        return this.players.find(p => p.id === this.socket.id);
+    }
+
     async createGame () {
         // TODO: step 1: API POST to server/api/createGame
-        const slug: string = await this.$axios.$post(
+        this.gameSlug = await this.$axios.$post(
             `${process.env.serverUrl}/api/createGame`
         );
-        this.log(`Game created - ${slug}`);
+        this.log(`Game created - ${this.gameSlug}`);
         const name = 'Chizu';
         // TODO: step 3: open connection to lobby?
         this.socket.emit(lobbyEvents.output.PLAYER_ENTER, {
             playerName: name,
-            game: slug
+            game: this.gameSlug
         });
         this.players.push({ id: this.socket.id, name, ready: false });
     }
@@ -78,37 +83,55 @@ export default class Homepage extends Vue {
         const slug = prompt('Enter the game slug');
 
         // TODO: step 4: simulate other players entering the game - POST to server/api/validateGame
-        const validGame = await this.$axios.$post(`${process.env.serverUrl}/api/validateGame`, slug);
+        const validGame = await this.$axios.$post(`${process.env.serverUrl}/api/validateGame`, {
+            slug
+        });
 
         if (!validGame) {
+            this.log('Invalid slug');
             return;
         }
 
+        this.gameSlug = slug!;
         const name = prompt('Enter your name');
-
+        this.log('Joined game');
         this.socket.emit(lobbyEvents.output.PLAYER_ENTER, {
             playerName: name,
-            game: slug
+            game: this.gameSlug
+        });
+        this.socket.emit(lobbyEvents.output.GET_PLAYERS, {
+            game: this.gameSlug
+        }, (players: { id: string; name: string; ready: boolean; }[]) => {
+            this.players = [...players];
         });
     }
 
     confirmReady () {
         // TODO: emit confirm ready check
         this.socket.emit(lobbyEvents.output.PLAYER_READY_STATUS, {
-            ready: true
+            ready: true,
+            game: this.gameSlug
         });
+        this.self!.ready = true;
     }
 
     declineReady () {
         // TODO: emit decline ready check
         this.socket.emit(lobbyEvents.output.PLAYER_READY_STATUS, {
-            ready: false
+            ready: false,
+            game: this.gameSlug
         });
+        this.self!.ready = false;
     }
 
     simulateCloseTab () {
         // TODO: if during the ready check, emit that player left
-        this.socket.emit(lobbyEvents.output.PLAYER_LEFT);
+        this.socket.emit(lobbyEvents.output.PLAYER_LEFT, {
+            game: this.gameSlug
+        });
+        this.players = [];
+        this.gameSlug = undefined;
+        this.messages = [];
     }
 
     sendEvent () {
