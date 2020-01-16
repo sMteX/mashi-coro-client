@@ -8,6 +8,7 @@
                 a(href="#" class="button--grey" v-on:click="confirmReady") Confirm ready check
                 a(href="#" class="button--grey" v-on:click="declineReady") Decline ready check
                 a(href="#" class="button--grey" v-on:click="simulateCloseTab") Simulate close tab
+                a(href="#" class="button--green" v-on:click="startGame" v-if="canStartGame") START THE GAME
             div
                 h3 Players:
                 ul
@@ -42,13 +43,15 @@ interface PlayerPair {
         Logo
     },
     head: {
-        title: 'Home'
+        title: 'Lobby'
     }
 })
-export default class Homepage extends Vue {
+export default class LobbyPage extends Vue {
     private socket!: SocketIOClient.Socket;
 
-    private gameSlug?: string;
+    private isOwner: boolean = false;
+    private allReady: boolean = false;
+    private gameSlug: string = "";
     private players: PlayerPair[] = [];
     private messages: string[] = [];
 
@@ -77,6 +80,10 @@ export default class Homepage extends Vue {
         return this.findPlayer(this.socket.id);
     }
 
+    get canStartGame (): boolean {
+        return this.isOwner && this.players.every(p => p.ready);
+    }
+
     async createGame () {
         // TODO: step 1: API POST to server/api/createGame
         this.gameSlug = await this.$axios.$post(
@@ -90,6 +97,7 @@ export default class Homepage extends Vue {
             game: this.gameSlug
         });
         this.players.push({ id: this.socket.id, name, ready: false });
+        this.isOwner = true;
     }
 
     async joinGame () {
@@ -146,15 +154,14 @@ export default class Homepage extends Vue {
             game: this.gameSlug
         });
         this.players = [];
-        this.gameSlug = undefined;
+        this.gameSlug = "";
         this.messages = [];
     }
 
-    sendEvent () {
-        alert('in handler');
-        this.socket.emit('next', 0, (response: any) =>
-            console.log('response', response)
-        );
+    startGame () {
+        this.socket.emit(lobbyEvents.output.START_GAME, {
+            game: this.gameSlug
+        });
     }
 
     setupHandlers () {
@@ -180,6 +187,14 @@ export default class Homepage extends Vue {
                 const name = this.findPlayer(player.id).name;
                 this.log(`Player ${name} left the lobby`);
                 this.players = this.players.filter(p => p.id !== player.id);
+            })
+            .on(lobbyEvents.input.GAME_STARTED, () => {
+                this.$router.push({
+                    path: '/game',
+                    query: {
+                        id: this.gameSlug
+                    }
+                });
             });
     }
 }

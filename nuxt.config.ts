@@ -28,7 +28,7 @@ const nuxtConfig: Configuration = {
      ** Headers of the page
      */
     head: {
-        titleTemplate: '%s | Contentry',
+        titleTemplate: '%s | Mashi Coro',
         meta: [
             { charset: 'utf-8' },
             {
