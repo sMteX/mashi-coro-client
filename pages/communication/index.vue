@@ -23,6 +23,11 @@
 import { Vue, Component } from 'vue-property-decorator';
 import Logo from '~/components/Logo.vue';
 import { events } from '~/utils/constants';
+import {
+    PlayerChangedReady,
+    PlayerEnteredLobby,
+    PlayerLeftLobby
+} from '~/utils/interfaces/events/lobby/input.interface';
 const io = require('socket.io-client');
 
 const { lobby: lobbyEvents } = events;
@@ -60,8 +65,16 @@ export default class Homepage extends Vue {
         console.log(message);
     }
 
-    get self () {
-        return this.players.find(p => p.id === this.socket.id);
+    findPlayer (id: string) {
+        const player = this.players.find(p => p.id === id);
+        if (!player) {
+            throw new Error('Player not found');
+        }
+        return player;
+    }
+
+    get self (): PlayerPair {
+        return this.findPlayer(this.socket.id);
     }
 
     async createGame () {
@@ -80,7 +93,10 @@ export default class Homepage extends Vue {
     }
 
     async joinGame () {
-        const slug = prompt('Enter the game slug');
+        let slug = null;
+        while (slug === null) {
+            slug = prompt('Enter the game slug');
+        }
 
         // TODO: step 4: simulate other players entering the game - POST to server/api/validateGame
         const validGame = await this.$axios.$post(`${process.env.serverUrl}/api/validateGame`, {
@@ -92,7 +108,7 @@ export default class Homepage extends Vue {
             return;
         }
 
-        this.gameSlug = slug!;
+        this.gameSlug = slug;
         const name = prompt('Enter your name');
         this.log('Joined game');
         this.socket.emit(lobbyEvents.output.PLAYER_ENTER, {
@@ -101,7 +117,7 @@ export default class Homepage extends Vue {
         });
         this.socket.emit(lobbyEvents.output.GET_PLAYERS, {
             game: this.gameSlug
-        }, (players: { id: string; name: string; ready: boolean; }[]) => {
+        }, (players: PlayerPair[]) => {
             this.players = [...players];
         });
     }
@@ -112,7 +128,7 @@ export default class Homepage extends Vue {
             ready: true,
             game: this.gameSlug
         });
-        this.self!.ready = true;
+        this.self.ready = true;
     }
 
     declineReady () {
@@ -121,7 +137,7 @@ export default class Homepage extends Vue {
             ready: false,
             game: this.gameSlug
         });
-        this.self!.ready = false;
+        this.self.ready = false;
     }
 
     simulateCloseTab () {
@@ -143,10 +159,9 @@ export default class Homepage extends Vue {
 
     setupHandlers () {
         this.socket
-            .on(lobbyEvents.input.PLAYER_ENTERED_LOBBY, (data: any) => {
-                // TODO: handle when another player enters lobby
-                this.log(`New player entered the game: ${data.playerName} - id: ${data.playerId}`);
-                this.players.push({ id: data.playerId, name: data.playerName, ready: false });
+            .on(lobbyEvents.input.PLAYER_ENTERED_LOBBY, (player: PlayerEnteredLobby) => {
+                this.log(`New player entered the game: ${player.name} - id: ${player.id}`);
+                this.players.push({ id: player.id, name: player.name, ready: false });
             })
             .on(lobbyEvents.input.GAME_PLAYABLE, () => {
                 // TODO: step 6: when game is playable, react somehow
@@ -155,20 +170,16 @@ export default class Homepage extends Vue {
             .on(lobbyEvents.input.ALL_READY, () => {
                 this.log('All players ready');
             })
-            .on(lobbyEvents.input.PLAYER_CHANGED_READY_STATUS, (data: any) => {
+            .on(lobbyEvents.input.PLAYER_CHANGED_READY_STATUS, (event: PlayerChangedReady) => {
                 // TODO: handle when another player confirms/cancels ready check
-                const player = this.players.find(player => player.id === data.playerId);
-                if (!player) {
-                    return;
-                }
-                player.ready = data.newStatus;
-                this.log(`Player ${player.name} changed ready status to ${data.newStatus}`);
+                const player = this.findPlayer(event.id);
+                player.ready = event.newStatus;
+                this.log(`Player ${player.name} changed ready status to ${player.ready}`);
             })
-            .on(lobbyEvents.input.PLAYER_LEFT_LOBBY, (data: any) => {
-                // TODO: handle when another player leaves lobby
-                const name = this.players.find(player => player.id === data.playerId)?.name || 'unknown';
+            .on(lobbyEvents.input.PLAYER_LEFT_LOBBY, (player: PlayerLeftLobby) => {
+                const name = this.findPlayer(player.id).name;
                 this.log(`Player ${name} left the lobby`);
-                this.players = this.players.filter(player => player.id !== data.playerId);
+                this.players = this.players.filter(p => p.id !== player.id);
             });
     }
 }
