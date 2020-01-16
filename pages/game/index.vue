@@ -19,7 +19,10 @@
 <script lang="ts">
 import { Vue, Component } from 'vue-property-decorator';
 import Logo from '~/components/Logo.vue';
+import { events as eventConstants } from '~/utils/constants';
+
 const io = require('socket.io-client');
+const { game: events } = eventConstants;
 
 interface PlayerPair {
     id: string;
@@ -42,10 +45,9 @@ export default class GamePage extends Vue {
 
     mounted () {
         // this.$route.query.id
-        // TODO: point to game namespace
-        // this.socket = io.connect(
-        //     `${process.env.serverUrl}/${lobbyEvents.namespaceName}`
-        // );
+        this.socket = io.connect(
+            `${process.env.serverUrl}/${events.namespaceName}`
+        );
         this.setupHandlers();
     }
 

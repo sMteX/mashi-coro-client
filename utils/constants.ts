@@ -16,5 +16,14 @@ export const events = {
             GET_PLAYERS: 'getPlayers',
             START_GAME: 'startGame'
         }
+    },
+    game: {
+        namespaceName: 'game',
+        input: {
+
+        },
+        output: {
+
+        }
     }
 };

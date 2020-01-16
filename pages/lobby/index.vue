@@ -23,7 +23,7 @@
 <script lang="ts">
 import { Vue, Component } from 'vue-property-decorator';
 import Logo from '~/components/Logo.vue';
-import { events } from '~/utils/constants';
+import { events as eventConstants } from '~/utils/constants';
 import {
     PlayerChangedReady,
     PlayerEnteredLobby,
@@ -31,7 +31,7 @@ import {
 } from '~/utils/interfaces/events/lobby/input.interface';
 const io = require('socket.io-client');
 
-const { lobby: lobbyEvents } = events;
+const { lobby: events } = eventConstants;
 interface PlayerPair {
     id: string;
     name: string;
@@ -50,15 +50,13 @@ export default class LobbyPage extends Vue {
     private socket!: SocketIOClient.Socket;
 
     private isOwner: boolean = false;
-    private allReady: boolean = false;
-    private gameSlug: string = "";
+    private gameSlug: string = '';
     private players: PlayerPair[] = [];
     private messages: string[] = [];
 
     mounted () {
-        // TODO: actually point the sockets to the lobby namespace
         this.socket = io.connect(
-            `${process.env.serverUrl}/${lobbyEvents.namespaceName}`
+            `${process.env.serverUrl}/${events.namespaceName}`
         );
         this.setupHandlers();
     }
@@ -92,7 +90,7 @@ export default class LobbyPage extends Vue {
         this.log(`Game created - ${this.gameSlug}`);
         const name = 'Chizu';
         // TODO: step 3: open connection to lobby?
-        this.socket.emit(lobbyEvents.output.PLAYER_ENTER, {
+        this.socket.emit(events.output.PLAYER_ENTER, {
             playerName: name,
             game: this.gameSlug
         });
@@ -119,11 +117,11 @@ export default class LobbyPage extends Vue {
         this.gameSlug = slug;
         const name = prompt('Enter your name');
         this.log('Joined game');
-        this.socket.emit(lobbyEvents.output.PLAYER_ENTER, {
+        this.socket.emit(events.output.PLAYER_ENTER, {
             playerName: name,
             game: this.gameSlug
         });
-        this.socket.emit(lobbyEvents.output.GET_PLAYERS, {
+        this.socket.emit(events.output.GET_PLAYERS, {
             game: this.gameSlug
         }, (players: PlayerPair[]) => {
             this.players = [...players];
@@ -132,7 +130,7 @@ export default class LobbyPage extends Vue {
 
     confirmReady () {
         // TODO: emit confirm ready check
-        this.socket.emit(lobbyEvents.output.PLAYER_READY_STATUS, {
+        this.socket.emit(events.output.PLAYER_READY_STATUS, {
             ready: true,
             game: this.gameSlug
         });
@@ -141,7 +139,7 @@ export default class LobbyPage extends Vue {
 
     declineReady () {
         // TODO: emit decline ready check
-        this.socket.emit(lobbyEvents.output.PLAYER_READY_STATUS, {
+        this.socket.emit(events.output.PLAYER_READY_STATUS, {
             ready: false,
             game: this.gameSlug
         });
@@ -150,45 +148,45 @@ export default class LobbyPage extends Vue {
 
     simulateCloseTab () {
         // TODO: if during the ready check, emit that player left
-        this.socket.emit(lobbyEvents.output.PLAYER_LEFT, {
+        this.socket.emit(events.output.PLAYER_LEFT, {
             game: this.gameSlug
         });
         this.players = [];
-        this.gameSlug = "";
+        this.gameSlug = '';
         this.messages = [];
     }
 
     startGame () {
-        this.socket.emit(lobbyEvents.output.START_GAME, {
+        this.socket.emit(events.output.START_GAME, {
             game: this.gameSlug
         });
     }
 
     setupHandlers () {
         this.socket
-            .on(lobbyEvents.input.PLAYER_ENTERED_LOBBY, (player: PlayerEnteredLobby) => {
+            .on(events.input.PLAYER_ENTERED_LOBBY, (player: PlayerEnteredLobby) => {
                 this.log(`New player entered the game: ${player.name} - id: ${player.id}`);
                 this.players.push({ id: player.id, name: player.name, ready: false });
             })
-            .on(lobbyEvents.input.GAME_PLAYABLE, () => {
+            .on(events.input.GAME_PLAYABLE, () => {
                 // TODO: step 6: when game is playable, react somehow
                 this.log('Game is playable now');
             })
-            .on(lobbyEvents.input.ALL_READY, () => {
+            .on(events.input.ALL_READY, () => {
                 this.log('All players ready');
             })
-            .on(lobbyEvents.input.PLAYER_CHANGED_READY_STATUS, (event: PlayerChangedReady) => {
+            .on(events.input.PLAYER_CHANGED_READY_STATUS, (event: PlayerChangedReady) => {
                 // TODO: handle when another player confirms/cancels ready check
                 const player = this.findPlayer(event.id);
                 player.ready = event.newStatus;
                 this.log(`Player ${player.name} changed ready status to ${player.ready}`);
             })
-            .on(lobbyEvents.input.PLAYER_LEFT_LOBBY, (player: PlayerLeftLobby) => {
+            .on(events.input.PLAYER_LEFT_LOBBY, (player: PlayerLeftLobby) => {
                 const name = this.findPlayer(player.id).name;
                 this.log(`Player ${name} left the lobby`);
                 this.players = this.players.filter(p => p.id !== player.id);
             })
-            .on(lobbyEvents.input.GAME_STARTED, () => {
+            .on(events.input.GAME_STARTED, () => {
                 this.$router.push({
                     path: '/game',
                     query: {
