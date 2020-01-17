@@ -1,13 +1,13 @@
 export interface PlayerEnteredLobby {
-    id: string;
+    id: number;
     name: string;
 }
 
 export interface PlayerChangedReady {
-    id: string;
+    id: number;
     newStatus: boolean;
 }
 
 export interface PlayerLeftLobby {
-    id: string;
+    id: number;
 }

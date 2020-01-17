@@ -33,7 +33,7 @@ const io = require('socket.io-client');
 
 const { lobby: events } = eventConstants;
 interface PlayerPair {
-    id: string;
+    id: number;
     name: string;
     ready: boolean;
 }
@@ -49,6 +49,7 @@ interface PlayerPair {
 export default class LobbyPage extends Vue {
     private socket!: SocketIOClient.Socket;
 
+    private selfId!: number;
     private isPlayable: boolean = false;
     private isOwner: boolean = false;
     private gameSlug: string = '';
@@ -67,7 +68,7 @@ export default class LobbyPage extends Vue {
         console.log(message);
     }
 
-    findPlayer (id: string) {
+    findPlayer (id: number) {
         const player = this.players.find(p => p.id === id);
         if (!player) {
             throw new Error('Player not found');
@@ -76,7 +77,7 @@ export default class LobbyPage extends Vue {
     }
 
     get self (): PlayerPair {
-        return this.findPlayer(this.socket.id);
+        return this.findPlayer(this.selfId);
     }
 
     get canStartGame (): boolean {
@@ -94,8 +95,10 @@ export default class LobbyPage extends Vue {
         this.socket.emit(events.output.PLAYER_ENTER, {
             playerName: name,
             game: this.gameSlug
+        }, (id: number) => {
+            this.selfId = id;
+            this.players.push({ id: this.selfId, name, ready: false });
         });
-        this.players.push({ id: this.socket.id, name, ready: false });
         this.isOwner = true;
     }
 
@@ -121,7 +124,7 @@ export default class LobbyPage extends Vue {
         this.socket.emit(events.output.PLAYER_ENTER, {
             playerName: name,
             game: this.gameSlug
-        });
+        }, (id: number) => this.selfId = id);
         this.socket.emit(events.output.GET_PLAYERS, {
             game: this.gameSlug
         }, (players: PlayerPair[]) => {
@@ -192,6 +195,7 @@ export default class LobbyPage extends Vue {
                 }
             })
             .on(events.input.GAME_STARTED, () => {
+                // TODO: pass player id
                 this.$router.push({
                     path: '/game',
                     query: {
