@@ -5,9 +5,9 @@
             div.links
                 a(href="#", class="button--grey" v-on:click="createGame") Create game
                 a(href="#", class="button--grey" v-on:click="joinGame") Join game
-                a(href="#" class="button--grey" v-on:click="confirmReady") Confirm ready check
-                a(href="#" class="button--grey" v-on:click="declineReady") Decline ready check
-                a(href="#" class="button--grey" v-on:click="simulateCloseTab") Simulate close tab
+                a(href="#" class="button--grey" v-on:click="confirmReady" v-if="isPlayable") Confirm ready check
+                a(href="#" class="button--grey" v-on:click="declineReady" v-if="isPlayable") Decline ready check
+                a(href="#" class="button--grey" v-on:click="simulateCloseTab" v-if="gameSlug !== ''") Simulate close tab
                 a(href="#" class="button--green" v-on:click="startGame" v-if="canStartGame") START THE GAME
             div
                 h3 Players:
@@ -49,6 +49,7 @@ interface PlayerPair {
 export default class LobbyPage extends Vue {
     private socket!: SocketIOClient.Socket;
 
+    private isPlayable: boolean = false;
     private isOwner: boolean = false;
     private gameSlug: string = '';
     private players: PlayerPair[] = [];
@@ -171,6 +172,7 @@ export default class LobbyPage extends Vue {
             .on(events.input.GAME_PLAYABLE, () => {
                 // TODO: step 6: when game is playable, react somehow
                 this.log('Game is playable now');
+                this.isPlayable = true;
             })
             .on(events.input.ALL_READY, () => {
                 this.log('All players ready');
@@ -185,6 +187,9 @@ export default class LobbyPage extends Vue {
                 const name = this.findPlayer(player.id).name;
                 this.log(`Player ${name} left the lobby`);
                 this.players = this.players.filter(p => p.id !== player.id);
+                if (this.players.length === 1) {
+                    this.isPlayable = false;
+                }
             })
             .on(events.input.GAME_STARTED, () => {
                 this.$router.push({
