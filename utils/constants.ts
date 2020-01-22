@@ -20,10 +20,10 @@ export const events = {
     game: {
         namespaceName: 'game',
         input: {
-
+            GAME_STARTING: 'gameStarting'
         },
         output: {
-
+            PLAYER_CONNECT: 'playerConnect'
         }
     }
 };

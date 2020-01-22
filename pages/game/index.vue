@@ -20,6 +20,7 @@
 import { Vue, Component } from 'vue-property-decorator';
 import Logo from '~/components/Logo.vue';
 import { events as eventConstants } from '~/utils/constants';
+import { GameStarting } from '~/utils/interfaces/events/game/input.interface';
 
 const io = require('socket.io-client');
 const { game: events } = eventConstants;
@@ -49,6 +50,10 @@ export default class GamePage extends Vue {
             `${process.env.serverUrl}/${events.namespaceName}`
         );
         this.setupHandlers();
+        this.socket.emit(events.output.PLAYER_CONNECT, {
+            game: this.$route.query.id,
+            id: Number(this.$route.query.playerId)
+        });
     }
 
     log (message: string) {
@@ -69,7 +74,9 @@ export default class GamePage extends Vue {
     }
 
     setupHandlers () {
-
+        this.socket.on(events.input.GAME_STARTING, (data: GameStarting) => {
+            console.log('Game starting soon, received data:', data);
+        });
     }
 }
 </script>

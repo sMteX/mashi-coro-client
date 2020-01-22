@@ -195,11 +195,11 @@ export default class LobbyPage extends Vue {
                 }
             })
             .on(events.input.GAME_STARTED, () => {
-                // TODO: pass player id
                 this.$router.push({
                     path: '/game',
                     query: {
-                        id: this.gameSlug
+                        id: this.gameSlug,
+                        playerId: this.selfId.toString()
                     }
                 });
             });
