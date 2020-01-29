@@ -7,6 +7,7 @@ interface CardCount {
 
 interface GameStartingPlayer {
     id: number;
+    socketId: string;
     name: string;
     cards: CardCount[];
     money: number;
