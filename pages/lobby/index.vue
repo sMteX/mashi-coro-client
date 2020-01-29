@@ -9,6 +9,7 @@
                 a(href="#" class="button--grey" v-on:click="declineReady" v-if="isPlayable") Decline ready check
                 a(href="#" class="button--grey" v-on:click="simulateCloseTab" v-if="gameSlug !== ''") Simulate close tab
                 a(href="#" class="button--green" v-on:click="startGame" v-if="canStartGame") START THE GAME
+                a(href="#" class="button--grey" v-clipboard="() => gameSlug" v-if="isOwner") Copy game slug
             div
                 h3 Players:
                 ul

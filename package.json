@@ -25,6 +25,7 @@
         "nuxt": "^2.11.0",
         "socket.io-client": "^2.3.0",
         "stylelint-scss": "^3.13.0",
+        "v-clipboard": "^2.2.2",
         "vue-property-decorator": "^8.3.0"
     },
     "devDependencies": {
