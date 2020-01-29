@@ -15,16 +15,28 @@
                 ul
                     li(v-for="message in lastMessages") {{ message }}
             div.game
-                h3 Table
+                div
+                    h3 Table
+                    p Bank: {{ table.bank }}
+                    Card(v-for="(card, index) in table.buyableCards" :info="card" :key="index")
+                    // - bank
+                        buyable cards
                 h3 You
+                    // - bank
+                        active cards
+                        winning cards
                 h3(v-for="player in otherPlayers") Player {{ player.name }}
+                    // - bank
+                        active cards
+                        winning cards
 </template>
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import Logo from '~/components/Logo.vue';
 import { events as eventConstants } from '~/utils/constants';
-import { GameStarting } from '~/utils/interfaces/events/game/input.interface';
+import { CardCount, GameStarting } from '~/utils/interfaces/events/game/input.interface';
+import Card from '~/components/Card.vue';
 
 const io = require('socket.io-client');
 const { game: events } = eventConstants;
@@ -35,9 +47,15 @@ interface PlayerPair {
     name: string;
 }
 
+interface Table {
+    bank: number;
+    buyableCards: CardCount[];
+}
+
 @Component({
     components: {
-        Logo
+        Logo,
+        Card
     },
     head: {
         title: 'Game'
@@ -45,6 +63,11 @@ interface PlayerPair {
 })
 export default class GamePage extends Vue {
     private socket!: SocketIOClient.Socket;
+
+    private table: Table = {
+        bank: 0,
+        buyableCards: []
+    };
 
     private dummySetup: boolean = false;
     private players: PlayerPair[] = [];
@@ -450,6 +473,8 @@ export default class GamePage extends Vue {
             bank: 204
         };
         this.players.push(...data.players.map(({ id, socketId, name }) => ({ id, socketId, name })));
+        this.table.bank = data.bank;
+        this.table.buyableCards = [...data.buyableCards];
     }
 
     setupHandlers () {
