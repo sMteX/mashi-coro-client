@@ -1,34 +1,37 @@
 <template lang="pug">
-    div.container
-        div
-            logo
-            h1 Game
-            div
-                h3 Players:
-                ul
-                    li(v-for="player in players")
-                        span {{ player.name }} - {{ player.id }}
-            div.links
-                nuxt-link(to="/lobby" class="button--grey") Back to lobby
-                a(href="#" class="button--grey" v-on:click="useDummyData") Use dummy data for UI design
-            div
-                ul
-                    li(v-for="message in lastMessages") {{ message }}
-            div.game
+    div
+        a-col(span=12, offset=6)
+            a-row(type="flex" justify="center")
+                logo
+            a-row
+                h1 Game
                 div
-                    h3 Table
-                    p Bank: {{ table.bank }}
-                    Card(v-for="(card, index) in table.buyableCards" :info="card" :key="index")
-                    // - bank
-                        buyable cards
-                h3 You
-                    // - bank
-                        active cards
-                        winning cards
-                h3(v-for="player in otherPlayers") Player {{ player.name }}
-                    // - bank
-                        active cards
-                        winning cards
+                    h3 Players:
+                    ul
+                        li(v-for="player in players")
+                            span {{ player.name }} - {{ player.id }}
+                div.links
+                    nuxt-link(to="/lobby" class="button--grey") Back to lobby
+                    a(href="#" class="button--grey" v-on:click="useDummyData") Use dummy data for UI design
+                div
+                    ul
+                        li(v-for="message in lastMessages") {{ message }}
+                a-row.game
+                    div
+                        h3 Table
+                        p Bank: {{ table.bank }}
+                        Card(:info="table.buyableCards[0]" v-if="table.buyableCards.length > 0")
+                        // - Card(v-for="(card, index) in table.buyableCards" :info="card" :key="index")
+                        // - bank
+                            buyable cards
+                    h3 You
+                        // - bank
+                            active cards
+                            winning cards
+                    h3(v-for="player in otherPlayers") Player {{ player.name }}
+                        // - bank
+                            active cards
+                            winning cards
 </template>
 
 <script lang="ts">
@@ -487,7 +490,7 @@ export default class GamePage extends Vue {
 
 <style lang="scss">
 .game {
-    text-align: left;
+    /*text-align: left;*/
 }
 
 .container {

@@ -8,6 +8,7 @@
                 a(href="https://nuxtjs.org/", target="_blank", class="button--green") Documentation
                 a(href="https://github.com/nuxt/nuxt.js", target="_blank", class="button--grey") GitHub
                 nuxt-link(to="/lobby", class="button--grey") Game lobby
+                nuxt-link(to="/game", class="button--grey") Game
 </template>
 
 <script lang="ts">
