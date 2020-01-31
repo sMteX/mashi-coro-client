@@ -1,17 +1,24 @@
 <template lang="pug">
-    div.card-stack
-        div(v-for="index in info.count-1" :class="`card_${index} ${cardBackgroundMap[info.card.cardName]}`" :key="index")
-        div.card
-            div.inner(:class="cardBackgroundMap[info.card.cardName]")
-                a-row(type="flex" justify="center") {{ info.card.triggerNumbers }}
-                a-row.name(type="flex" justify="center") {{ info.card.symbol }} {{ info.card.name }}
-                a-row.empty-space
-                a-row.text-center.bottom-row
-                    a-col(span=6)
-                        a-row {{ info.card.canBeTriggeredByOthers ? 'ALL' : 'YOU' }}
-                        a-row {{ info.card.cost }}
-                    a-col(span=18)
-                        a-row {{ info.card.description }}
+    a-popover
+        template(slot="content")
+            // - closeup
+            div.card
+                div.inner(:class="cardBackgroundMap[info.card.cardName]")
+                    a-row(type="flex" justify="center") {{ info.card.triggerNumbers }}
+                    a-row.name(type="flex" justify="center") {{ info.card.symbol }} {{ info.card.name }}
+                    a-row.empty-space
+                    a-row.text-center.bottom-row
+                        a-col(span=6)
+                            a-row {{ info.card.canBeTriggeredByOthers ? 'ALL' : 'YOU' }}
+                            a-row {{ info.card.cost }}
+                        a-col(span=18)
+                            a-row {{ info.card.description }}
+        // - miniature
+        div.card-stack
+            div(v-for="index in info.count-1" :class="`card_${index}`" :key="index")
+            div.card-miniature
+                a-row.inner(type="flex" justify="center" align="middle" :class="cardBackgroundMap[info.card.cardName]")
+                    span.text-center {{ info.card.name }}
 </template>
 
 <script>
@@ -58,9 +65,12 @@ export default class Card extends Vue {
 </script>
 
 <style scoped lang="scss">
-$card-height: 225;
-$card-width: 175;
+$card-mini-height: 110;
+$card-mini-width: 80;
 $card-overlay: 3;
+
+$card-height: 300;
+$card-width: 200;
 
 .green-bg {
     background-color: #407900;
@@ -74,29 +84,36 @@ $card-overlay: 3;
 .purple-bg {
     background-color: #952981;
 }
-@mixin card-style {
-    position: absolute;
+@mixin border-radius($radius: 5) {
+    $rpx: #{$radius}px;
+    border-radius: $rpx;
+    -moz-border-radius: $rpx;
+    -webkit-border-radius: $rpx;
+}
+@mixin common-card-style {
     background-color: white;
     color: white;
-    height: #{$card-height}px;
-    width: #{$card-width}px;
-    border-radius: 5px 5px 5px 5px;
-    -moz-border-radius: 5px 5px 5px 5px;
-    -webkit-border-radius: 5px 5px 5px 5px;
     border: 1px solid black;
 }
-
+@mixin card-mini-style {
+    @include common-card-style;
+    @include border-radius;
+    position: absolute;
+    height: #{$card-mini-height}px;
+    width: #{$card-mini-width}px;
+}
 .card-stack {
     position: relative;
-    width: #{$card-width + 5 * $card-overlay}px;
-    height: #{$card-height + 5 * $card-overlay}px;
+    width: #{$card-mini-width + 5 * $card-overlay}px;
+    height: #{$card-mini-height + 5 * $card-overlay}px;
     margin-bottom: 10px;
     margin-right: 10px;
 }
 .card {
-    @include card-style;
-    bottom: 0;
-    z-index: 100;
+    @include common-card-style;
+    @include border-radius;
+    height: #{$card-height}px;
+    width: #{$card-width}px;
     display: flex;
 
     .inner {
@@ -104,9 +121,7 @@ $card-overlay: 3;
         display: flex;
         flex-flow: column;
 
-        border-radius: 5px 5px 5px 5px;
-        -moz-border-radius: 5px 5px 5px 5px;
-        -webkit-border-radius: 5px 5px 5px 5px;
+        @include border-radius;
 
         .name {
             margin-bottom: 5px;
@@ -119,11 +134,31 @@ $card-overlay: 3;
         .bottom-row {
             margin: 5px;
         }
+
+    }
+}
+.card-miniature {
+    @include card-mini-style;
+    bottom: 0;
+    z-index: 100;
+    display: flex;
+
+    .inner {
+        margin: 4px;
+        display: flex;
+        flex: 1;
+
+        @include border-radius;
+
+        span {
+            margin: 4px;
+            word-break: break-word;
+        }
     }
 }
 @for $i from 1 through 5 {
     .card_#{$i} {
-        @include card-style;
+        @include card-mini-style;
         left: #{$i * $card-overlay}px;
         bottom: #{$i * $card-overlay}px;
         z-index: #{100 - $i};

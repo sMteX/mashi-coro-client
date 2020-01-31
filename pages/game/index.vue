@@ -22,10 +22,9 @@
                             h3 Table
                         a-row
                             p Bank: {{ table.bank }}
-                        a-row(type="flex" justify="space-around")
-                            Card(v-for="(card, index) in table.buyableCards" :info="card" :key="index")
-                        // - bank
-                            buyable cards
+                        a-row
+                            a-row(type="flex" justify="space-around" v-for="(row, rowIndex) in buyableCardsTable" :key="rowIndex")
+                                Card(v-for="(card, index) in row" :info="card" :key="index")
                     h3 You
                         // - bank
                             active cards
@@ -38,6 +37,7 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
+import * as _ from 'lodash';
 import Logo from '~/components/Logo.vue';
 import { events as eventConstants } from '~/utils/constants';
 import { CardCount, GameStarting } from '~/utils/interfaces/events/game/input.interface';
@@ -91,6 +91,10 @@ export default class GamePage extends Vue {
         //     game: this.$route.query.id,
         //     id: Number(this.$route.query.playerId)
         // });
+    }
+
+    get buyableCardsTable (): CardCount[][] {
+        return _.chunk(this.table.buyableCards, 5);
     }
 
     get lastMessages (): string[] {
