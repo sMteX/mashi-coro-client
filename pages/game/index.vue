@@ -1,6 +1,6 @@
 <template lang="pug">
     div
-        a-col(span=12, offset=6)
+        a-col.game-container(span=18, offset=3)
             a-row(type="flex" justify="center")
                 logo
             a-row
@@ -16,23 +16,33 @@
                 div
                     ul
                         li(v-for="message in lastMessages") {{ message }}
-                a-row.game
-                    a-row
+                a-row.game(v-if="loaded")
+                    a-col(span=12)
                         a-row
-                            h3 Table
+                            a-row
+                                h3 You
+                            a-row
+                                p Money: {{ thisPlayer.money }}
+                            a-row
+                                a-row(type="flex" justify="start" gutter=16 v-for="(row, rowIndex) in playerCards(thisPlayer)" :key="rowIndex")
+                                    Card(v-for="(card, index) in row" :info="card" :key="index")
                         a-row
-                            p Bank: {{ table.bank }}
-                        a-row
-                            a-row(type="flex" justify="space-around" v-for="(row, rowIndex) in buyableCardsTable" :key="rowIndex")
-                                Card(v-for="(card, index) in row" :info="card" :key="index")
-                    h3 You
-                        // - bank
-                            active cards
-                            winning cards
-                    h3(v-for="player in otherPlayers") Player {{ player.name }}
-                        // - bank
-                            active cards
-                            winning cards
+                            a-row
+                                h3 Table
+                            a-row
+                                p Bank: {{ table.bank }}
+                            a-row
+                                a-row(type="flex" justify="space-around" v-for="(row, rowIndex) in buyableCardsTable" :key="rowIndex")
+                                    Card(v-for="(card, index) in row" :info="card" :key="index")
+                    a-col(span=11 offset=1)
+                        a-row(v-for="(player, pi) in otherPlayers" :key="pi")
+                            a-row
+                                h3 {{ player.name }}
+                            a-row
+                                p Money: {{ thisPlayer.money }}
+                            a-row
+                                a-row(type="flex" justify="start" gutter=16 v-for="(row, rowIndex) in playerCards(thisPlayer)" :key="rowIndex")
+                                    Card(v-for="(card, index) in row" :info="card" :key="index")
 </template>
 
 <script lang="ts">
@@ -46,10 +56,14 @@ import Card from '~/components/Card.vue';
 const io = require('socket.io-client');
 const { game: events } = eventConstants;
 
-interface PlayerPair {
-    socketId: string;
+interface Player {
     id: number;
+    socketId: string;
     name: string;
+
+    cards: CardCount[];
+    money: number;
+    winningCards: CardCount[];
 }
 
 interface Table {
@@ -75,8 +89,9 @@ export default class GamePage extends Vue {
     };
 
     private dummySetup: boolean = false;
-    private players: PlayerPair[] = [];
+    private players: Player[] = [];
     private messages: string[] = [];
+    private loaded: boolean = false;
 
     mounted () {
         this.dummySetup = true;
@@ -91,10 +106,19 @@ export default class GamePage extends Vue {
         //     game: this.$route.query.id,
         //     id: Number(this.$route.query.playerId)
         // });
+        this.loaded = true;
     }
 
     get buyableCardsTable (): CardCount[][] {
         return _.chunk(this.table.buyableCards, 5);
+    }
+
+    playerCards (player: Player): CardCount[][] {
+        const cards: CardCount[][] = [];
+        cards.push([...player.cards.filter(({ card }) => card.canBeTriggeredByOthers)]);
+        cards.push([...player.cards.filter(({ card }) => !card.canBeTriggeredByOthers)]);
+        cards.push([...player.winningCards]);
+        return cards;
     }
 
     get lastMessages (): string[] {
@@ -110,14 +134,14 @@ export default class GamePage extends Vue {
         return this.players.find(p => p.socketId === id)!;
     }
 
-    get self (): PlayerPair {
+    get thisPlayer (): Player {
         if (this.dummySetup) {
             return this.players[0];
         }
         return this.findPlayer(this.socket.id);
     }
 
-    get otherPlayers (): PlayerPair[] {
+    get otherPlayers (): Player[] {
         if (this.dummySetup) {
             return this.players.slice(1);
         }
@@ -481,9 +505,22 @@ export default class GamePage extends Vue {
             ],
             bank: 204
         };
-        this.players.push(...data.players.map(({ id, socketId, name }) => ({ id, socketId, name })));
         this.table.bank = data.bank;
         this.table.buyableCards = [...data.buyableCards];
+        this.players.push(...data.players.map(player => ({
+            id: player.id,
+            socketId: player.socketId,
+            name: player.name,
+            money: player.money,
+            cards: [...player.cards],
+            winningCards: data.winningCards.map(card => ({
+                card: {
+                    ...card,
+                    bought: false
+                },
+                count: 1
+            }))
+        })));
     }
 
     setupHandlers () {
@@ -497,6 +534,9 @@ export default class GamePage extends Vue {
 <style lang="scss">
 .game {
     /*text-align: left;*/
+}
+.game-container {
+    margin-bottom: 50px;
 }
 
 .container {

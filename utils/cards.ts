@@ -41,4 +41,5 @@ export interface Card {
     description: string;
     canBeTriggeredByOthers: boolean;
     canBeTriggeredBySelf: boolean;
+    bought?: boolean;
 }

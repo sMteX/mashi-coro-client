@@ -1,8 +1,16 @@
 <template lang="pug">
     a-popover
         template(slot="content")
+            // - winning card closeup
+            div.card(v-if="winningCards.includes(info.card.cardName)")
+                div.inner(:class="cardBackgroundMap[info.card.cardName]")
+                    a-row.name(type="flex" justify="center") {{ info.card.symbol }} {{ info.card.name }}
+                    a-row.empty-space
+                    a-row.text-center.bottom-row(type="flex" align="middle")
+                        a-col(span=6) {{ info.card.cost }}
+                        a-col(span=18) {{ info.card.description }}
             // - closeup
-            div.card
+            div.card(v-else)
                 div.inner(:class="cardBackgroundMap[info.card.cardName]")
                     a-row(type="flex" justify="center") {{ info.card.triggerNumbers }}
                     a-row.name(type="flex" justify="center") {{ info.card.symbol }} {{ info.card.name }}
@@ -29,7 +37,9 @@ const cssBackgrounds = {
     green: 'green-bg',
     red: 'red-bg',
     purple: 'purple-bg',
-    blue: 'blue-bg'
+    blue: 'blue-bg',
+    winningActive: 'winning-active-bg',
+    winningInactive: 'winning-inactive-bg'
 };
 
 @Component({
@@ -40,6 +50,7 @@ const cssBackgrounds = {
     }
 })
 export default class Card extends Vue {
+    winningCards = [CardName.Station, CardName.AmusementPark, CardName.ShoppingCenter, CardName.Transmitter];
     cardBackgroundMap = {
         [CardName.Bakery]: cssBackgrounds.green,
         [CardName.Shop]: cssBackgrounds.green,
@@ -58,8 +69,12 @@ export default class Card extends Vue {
         [CardName.OfficeBuilding]: cssBackgrounds.purple,
 
         [CardName.CoffeeShop]: cssBackgrounds.red,
-        [CardName.Restaurant]: cssBackgrounds.red
-        // TODO: winning cards
+        [CardName.Restaurant]: cssBackgrounds.red,
+
+        [CardName.Station]: cssBackgrounds.winningInactive,
+        [CardName.ShoppingCenter]: cssBackgrounds.winningInactive,
+        [CardName.AmusementPark]: cssBackgrounds.winningInactive,
+        [CardName.Transmitter]: cssBackgrounds.winningInactive
     };
 }
 </script>
@@ -84,6 +99,12 @@ $card-width: 200;
 .purple-bg {
     background-color: #952981;
 }
+.winning-inactive-bg {
+    background-color: #8a8a8a;
+}
+.winning-active-bg {
+    background-color: #fed233;
+}
 @mixin border-radius($radius: 5) {
     $rpx: #{$radius}px;
     border-radius: $rpx;
@@ -107,7 +128,6 @@ $card-width: 200;
     width: #{$card-mini-width + 5 * $card-overlay}px;
     height: #{$card-mini-height + 5 * $card-overlay}px;
     margin-bottom: 10px;
-    margin-right: 10px;
 }
 .card {
     @include common-card-style;
