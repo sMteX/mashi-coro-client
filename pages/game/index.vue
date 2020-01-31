@@ -24,7 +24,7 @@
                             a-row
                                 p Money: {{ thisPlayer.money }}
                             a-row
-                                a-row(type="flex" justify="start" gutter=16 v-for="(row, rowIndex) in playerCards(thisPlayer)" :key="rowIndex")
+                                a-row(type="flex" justify="start" :gutter=16 v-for="(row, rowIndex) in playerCards(thisPlayer)" :key="rowIndex")
                                     Card(v-for="(card, index) in row" :info="card" :key="index")
                         a-row
                             a-row
@@ -33,7 +33,7 @@
                                 p Bank: {{ table.bank }}
                             a-row
                                 a-row(type="flex" justify="space-around" v-for="(row, rowIndex) in buyableCardsTable" :key="rowIndex")
-                                    Card(v-for="(card, index) in row" :info="card" :key="index")
+                                    Card(v-for="(card, index) in row" :info="card" :key="index" clickable)
                     a-col(span=11 offset=1)
                         a-row(v-for="(player, pi) in otherPlayers" :key="pi")
                             a-row
@@ -41,7 +41,7 @@
                             a-row
                                 p Money: {{ thisPlayer.money }}
                             a-row
-                                a-row(type="flex" justify="start" gutter=16 v-for="(row, rowIndex) in playerCards(thisPlayer)" :key="rowIndex")
+                                a-row(type="flex" justify="start" :gutter=16 v-for="(row, rowIndex) in playerCards(thisPlayer)" :key="rowIndex")
                                     Card(v-for="(card, index) in row" :info="card" :key="index")
 </template>
 
@@ -115,9 +115,9 @@ export default class GamePage extends Vue {
 
     playerCards (player: Player): CardCount[][] {
         const cards: CardCount[][] = [];
+        cards.push([...player.winningCards]);
         cards.push([...player.cards.filter(({ card }) => card.canBeTriggeredByOthers)]);
         cards.push([...player.cards.filter(({ card }) => !card.canBeTriggeredByOthers)]);
-        cards.push([...player.winningCards]);
         return cards;
     }
 

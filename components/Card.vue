@@ -24,7 +24,7 @@
         // - miniature
         div.card-stack
             div(v-for="index in info.count-1" :class="`card_${index}`" :key="index")
-            div.card-miniature
+            div.card-miniature(:class="{ clickable }")
                 a-row.inner(type="flex" justify="center" align="middle" :class="cardBackgroundMap[info.card.cardName]")
                     span.text-center {{ info.card.name }}
 </template>
@@ -46,6 +46,11 @@ const cssBackgrounds = {
     components: {
     },
     props: {
+        clickable: {
+            required: false,
+            default: false,
+            type: Boolean
+        },
         info: Object
     }
 })
@@ -87,24 +92,26 @@ $card-overlay: 3;
 $card-height: 300;
 $card-width: 200;
 
-.green-bg {
-    background-color: #407900;
+$colors: (
+    "green-bg": #407900,
+    "blue-bg": #4170a2,
+    "red-bg": #84160f,
+    "purple-bg": #952981,
+    "winning-inactive-bg": #8a8a8a,
+    "winning-active-bg": #fed233
+);
+
+@each $class, $color in $colors {
+    .#{$class} {
+        background-color: $color;
+    }
+    .clickable:hover {
+        .#{$class} {
+            background-color: lighten($color, 15%);
+        }
+    }
 }
-.blue-bg {
-    background-color: #4170a2;
-}
-.red-bg {
-    background-color: #84160f;
-}
-.purple-bg {
-    background-color: #952981;
-}
-.winning-inactive-bg {
-    background-color: #8a8a8a;
-}
-.winning-active-bg {
-    background-color: #fed233;
-}
+
 @mixin border-radius($radius: 5) {
     $rpx: #{$radius}px;
     border-radius: $rpx;
