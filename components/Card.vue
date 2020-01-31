@@ -4,8 +4,8 @@
         div.card
             a-row(type="flex" justify="center") {{ info.card.triggerNumbers }}
             a-row(type="flex" justify="center") {{ info.card.symbol }} {{ info.card.name }}
-            a-row.card-empty-space
-            a-row.text-center
+            a-row.empty-space
+            a-row.text-center.bottom-row
                 a-col(span=6)
                     a-row {{ info.card.canBeTriggeredByOthers ? 'ALL' : 'YOU' }}
                     a-row {{ info.card.cost }}
@@ -28,47 +28,51 @@ export default class Card extends Vue {
 </script>
 
 <style scoped lang="scss">
-//$colors: red, yellow, orange, green, cyan;
 $card-height: 225;
 $card-width: 175;
-@for $i from 1 through 5 {
-    .card_#{$i} {
-        position: absolute;
-        left: #{$i * 5}px;
-        bottom: #{$i * 5}px;
-        z-index: #{100 - $i};
-        background-color: white;
-        height: #{$card-height}px;
-        width: #{$card-width}px;
-        border: 1px solid black;
-    }
+$card-overlay: 3;
+
+@mixin card-style {
+    position: absolute;
+    background-color: white;
+    height: #{$card-height}px;
+    width: #{$card-width}px;
+    border-radius: 5px 5px 5px 5px;
+    -moz-border-radius: 5px 5px 5px 5px;
+    -webkit-border-radius: 5px 5px 5px 5px;
+    border: 1px solid black;
 }
+
 .card-stack {
     position: relative;
-    width: #{$card-width + 25}px;
-    height: #{$card-height + 25}px;
-}
-.text-center {
-    text-align: center;
+    width: #{$card-width + 5 * $card-overlay}px;
+    height: #{$card-height + 5 * $card-overlay}px;
+    margin-bottom: 10px;
+    margin-right: 10px;
 }
 .card {
-    position: absolute;
+    @include card-style;
     bottom: 0;
     z-index: 100;
     display: flex;
     flex-flow: column;
-    width: #{$card-width}px;
-    height: #{$card-height}px;
-    background-color: white;
-    border: 1px solid black;
+    .empty-space {
+        flex: 1;
+        min-height: 50px;
+    }
+    .bottom-row {
+        margin: 5px;
+    }
 }
-.card-empty-space {
-    flex: 1;
-    min-height: 100px;
+@for $i from 1 through 5 {
+    .card_#{$i} {
+        @include card-style;
+        left: #{$i * $card-overlay}px;
+        bottom: #{$i * $card-overlay}px;
+        z-index: #{100 - $i};
+    }
 }
-.multiple {
-    -webkit-box-shadow: 4px 4px 3px 0 rgba(0,0,0,1);
-    -moz-box-shadow: 4px 4px 3px 0 rgba(0,0,0,1);
-    box-shadow: 4px 4px 3px 0 rgba(0,0,0,1);
+.text-center {
+    text-align: center;
 }
 </style>

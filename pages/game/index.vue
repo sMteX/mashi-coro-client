@@ -17,11 +17,13 @@
                     ul
                         li(v-for="message in lastMessages") {{ message }}
                 a-row.game
-                    div
-                        h3 Table
-                        p Bank: {{ table.bank }}
-                        Card(:info="table.buyableCards[0]" v-if="table.buyableCards.length > 0")
-                        // - Card(v-for="(card, index) in table.buyableCards" :info="card" :key="index")
+                    a-row
+                        a-row
+                            h3 Table
+                        a-row
+                            p Bank: {{ table.bank }}
+                        a-row(type="flex" justify="space-around")
+                            Card(v-for="(card, index) in table.buyableCards" :info="card" :key="index")
                         // - bank
                             buyable cards
                     h3 You
