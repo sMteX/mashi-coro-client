@@ -17,32 +17,53 @@
                     ul
                         li(v-for="message in lastMessages") {{ message }}
                 a-row.game(v-if="loaded")
-                    a-col(span=12)
-                        a-row
+                    a-row
+                        h3 Turn phases
+                        div
+                            a-radio-group(button-style="solid")
+                                a-radio-button(v-for="(value, name, index) in turnPhases" :value="name" :key="index") {{ value }}
+                    a-row
+                        h3 Actions
+                        a(href="#" class="button--grey") Hod 1 kostkou
+                        a(href="#" class="button--grey") Hod 2 kostkami
+                        a(href="#" class="button--grey") (Přidat k hodu 2)
+                        a(href="#" class="button--grey") (Hodit znovu)
+                        a(href="#" class="button--grey") Ukončit tah
+                    a-row
+                        h3 Dice
+                        p Die #1:
+                        p Die #2:
+                    a-row
+                        a-col(span=12)
                             a-row
-                                h3 You
+                                a-row
+                                    h3 You
+                                a-row
+                                    p Money: {{ thisPlayer.money }}
+                                a-row
+                                    a-row(type="flex" justify="start" :gutter=16)
+                                        // - TODO: only when player is on turn and can afford
+                                        Card(v-for="(card, index) in playerCards(thisPlayer)[0]" :info="card" :key="index" clickable)
+                                    a-row(type="flex" justify="start" :gutter=16 v-for="(row, rowIndex) in playerCards(thisPlayer).slice(1)" :key="rowIndex")
+                                        Card(v-for="(card, index) in row" :info="card" :key="index")
                             a-row
-                                p Money: {{ thisPlayer.money }}
-                            a-row
-                                a-row(type="flex" justify="start" :gutter=16 v-for="(row, rowIndex) in playerCards(thisPlayer)" :key="rowIndex")
-                                    Card(v-for="(card, index) in row" :info="card" :key="index")
-                        a-row
-                            a-row
-                                h3 Table
-                            a-row
-                                p Bank: {{ table.bank }}
-                            a-row
-                                a-row(type="flex" justify="space-around" v-for="(row, rowIndex) in buyableCardsTable" :key="rowIndex")
-                                    Card(v-for="(card, index) in row" :info="card" :key="index" clickable)
-                    a-col(span=11 offset=1)
-                        a-row(v-for="(player, pi) in otherPlayers" :key="pi")
-                            a-row
-                                h3 {{ player.name }}
-                            a-row
-                                p Money: {{ thisPlayer.money }}
-                            a-row
-                                a-row(type="flex" justify="start" :gutter=16 v-for="(row, rowIndex) in playerCards(thisPlayer)" :key="rowIndex")
-                                    Card(v-for="(card, index) in row" :info="card" :key="index")
+                                a-row
+                                    h3 Table
+                                a-row
+                                    p Bank: {{ table.bank }}
+                                a-row
+                                    a-row(type="flex" justify="space-around" v-for="(row, rowIndex) in buyableCardsTable" :key="rowIndex")
+                                        // - TODO: clickable should only trigger if player is on turn and can afford
+                                        Card(v-for="(card, index) in row" :info="card" :key="index" clickable)
+                        a-col(span=11 offset=1)
+                            a-row(v-for="(player, pi) in otherPlayers" :key="pi")
+                                a-row
+                                    h3 {{ player.name }}
+                                a-row
+                                    p Money: {{ player.money }}
+                                a-row
+                                    a-row(type="flex" justify="start" :gutter=16 v-for="(row, rowIndex) in playerCards(player)" :key="rowIndex")
+                                        Card(v-for="(card, index) in row" :info="card" :key="index")
 </template>
 
 <script lang="ts">
@@ -56,6 +77,27 @@ import Card from '~/components/Card.vue';
 const io = require('socket.io-client');
 const { game: events } = eventConstants;
 
+enum TurnPhase {
+    DiceChoice,
+    DiceRoll,
+    PostRoll,
+    RedCards,
+    BlueGreenCards,
+    PurpleCards,
+    Build,
+    PostBuild,
+    EndTurn
+}
+/*
+Poradi efektu dominant behem tahu:
+- Nadrazi - zvoleni 1 nebo 2 kostek
+- Vysilac - moznost noveho hodu
+- Pristav - pricteni +2 k hodu 10 a vic
+- Nakupni centrum - bonus k prijmum z cervenych karet a beden
+- Radnice - 1 mince pokud nemam zadne penize pred stavbou
+- Letiste - 10 minci pokud jsem nic nepostavil
+- Zabavni park - novy tah pokud padly stejne kostky
+ */
 interface Player {
     id: number;
     socketId: string;
@@ -82,6 +124,18 @@ interface Table {
 })
 export default class GamePage extends Vue {
     private socket!: SocketIOClient.Socket;
+
+    private turnPhases = {
+        [TurnPhase.DiceChoice]: 'Výběr počtu kostek',
+        [TurnPhase.DiceRoll]: 'Hod kostkou',
+        [TurnPhase.PostRoll]: 'Po hodu kostkou',
+        [TurnPhase.RedCards]: 'Červené karty',
+        [TurnPhase.BlueGreenCards]: 'Zelené a modré karty',
+        [TurnPhase.PurpleCards]: 'Fialové karty',
+        [TurnPhase.Build]: 'Stavba/nákup',
+        [TurnPhase.PostBuild]: 'Po stavbě',
+        [TurnPhase.EndTurn]: 'Konec tahu'
+    };
 
     private table: Table = {
         bank: 0,
@@ -164,6 +218,7 @@ export default class GamePage extends Vue {
                                 cost: 1,
                                 description: 'Vezměte si 1 minci z banku',
                                 symbol: 0,
+                                color: 1,
                                 triggerNumbers: [
                                     1
                                 ],
@@ -179,6 +234,7 @@ export default class GamePage extends Vue {
                                 cost: 1,
                                 description: 'Vezměte si 1 minci z banku',
                                 symbol: 1,
+                                color: 0,
                                 triggerNumbers: [
                                     2,
                                     3
@@ -203,6 +259,7 @@ export default class GamePage extends Vue {
                                 cost: 1,
                                 description: 'Vezměte si 1 minci z banku',
                                 symbol: 0,
+                                color: 1,
                                 triggerNumbers: [
                                     1
                                 ],
@@ -218,6 +275,7 @@ export default class GamePage extends Vue {
                                 cost: 1,
                                 description: 'Vezměte si 1 minci z banku',
                                 symbol: 1,
+                                color: 0,
                                 triggerNumbers: [
                                     2,
                                     3
@@ -239,6 +297,7 @@ export default class GamePage extends Vue {
                         cost: 1,
                         description: 'Vezměte si 1 minci z banku',
                         symbol: 0,
+                        color: 1,
                         triggerNumbers: [
                             1
                         ],
@@ -254,6 +313,7 @@ export default class GamePage extends Vue {
                         cost: 1,
                         description: 'Vezměte si 1 minci z banku',
                         symbol: 2,
+                        color: 1,
                         triggerNumbers: [
                             2
                         ],
@@ -269,6 +329,7 @@ export default class GamePage extends Vue {
                         cost: 1,
                         description: 'Vezměte si 1 minci z banku',
                         symbol: 1,
+                        color: 0,
                         triggerNumbers: [
                             2,
                             3
@@ -285,6 +346,7 @@ export default class GamePage extends Vue {
                         cost: 2,
                         description: 'Dostanete 1 minci od hráče na tahu',
                         symbol: 3,
+                        color: 2,
                         triggerNumbers: [
                             3
                         ],
@@ -300,6 +362,7 @@ export default class GamePage extends Vue {
                         cost: 2,
                         description: 'Vezměte si 3 mince z banku',
                         symbol: 1,
+                        color: 0,
                         triggerNumbers: [
                             4
                         ],
@@ -315,6 +378,7 @@ export default class GamePage extends Vue {
                         cost: 3,
                         description: 'Vezměte si 1 minci z banku',
                         symbol: 4,
+                        color: 1,
                         triggerNumbers: [
                             5
                         ],
@@ -330,6 +394,7 @@ export default class GamePage extends Vue {
                         cost: 6,
                         description: 'Dostanete 2 mince od každého soupeře',
                         symbol: 5,
+                        color: 3,
                         triggerNumbers: [
                             6
                         ],
@@ -341,10 +406,11 @@ export default class GamePage extends Vue {
                 {
                     card: {
                         cardName: 7,
-                        name: 'Stadión',
+                        name: 'Televizní studio',
                         cost: 7,
                         description: 'Dostanete 5 mincí od zvoleného soupeře',
                         symbol: 5,
+                        color: 3,
                         triggerNumbers: [
                             6
                         ],
@@ -360,6 +426,7 @@ export default class GamePage extends Vue {
                         cost: 8,
                         description: 'Můžete vyměnit jednu svoji kartu objektu za soupeřovu (nelze měnit Věže)',
                         symbol: 5,
+                        color: 3,
                         triggerNumbers: [
                             6
                         ],
@@ -375,6 +442,7 @@ export default class GamePage extends Vue {
                         cost: 5,
                         description: 'Za každý svůj objekt Prase si vezměte 3 mince z banku',
                         symbol: 6,
+                        color: 0,
                         triggerNumbers: [
                             7
                         ],
@@ -390,6 +458,7 @@ export default class GamePage extends Vue {
                         cost: 3,
                         description: 'Za každý svůj objekt Kolečko si vezměte 3 mince z banku',
                         symbol: 6,
+                        color: 0,
                         triggerNumbers: [
                             8
                         ],
@@ -405,6 +474,7 @@ export default class GamePage extends Vue {
                         cost: 6,
                         description: 'Vezměte si 5 mincí z banku',
                         symbol: 4,
+                        color: 1,
                         triggerNumbers: [
                             9
                         ],
@@ -420,6 +490,7 @@ export default class GamePage extends Vue {
                         cost: 3,
                         description: 'Vezměte si 3 mince z banku',
                         symbol: 0,
+                        color: 1,
                         triggerNumbers: [
                             10
                         ],
@@ -435,6 +506,7 @@ export default class GamePage extends Vue {
                         cost: 3,
                         description: 'Dostanete 2 minci od hráče na tahu',
                         symbol: 3,
+                        color: 2,
                         triggerNumbers: [
                             9,
                             10
@@ -451,6 +523,7 @@ export default class GamePage extends Vue {
                         cost: 2,
                         description: 'Za každý svůj objekt Obilí si vezměte 2 mince z banku',
                         symbol: 7,
+                        color: 0,
                         triggerNumbers: [
                             11,
                             12
@@ -468,6 +541,7 @@ export default class GamePage extends Vue {
                     cost: 4,
                     description: 'Můžete házet jednou nebo dvěma kostkami.',
                     symbol: 5,
+                    color: 4,
                     triggerNumbers: [],
                     canBeTriggeredByOthers: false,
                     canBeTriggeredBySelf: false
@@ -478,6 +552,7 @@ export default class GamePage extends Vue {
                     cost: 10,
                     description: 'Dostáváte-li příjmy za objekty Kafe nebo Toast, dostanete za každý z nich o 1 minci více.',
                     symbol: 5,
+                    color: 4,
                     triggerNumbers: [],
                     canBeTriggeredByOthers: false,
                     canBeTriggeredBySelf: false
@@ -488,6 +563,7 @@ export default class GamePage extends Vue {
                     cost: 16,
                     description: 'Pokud vám při hodu dvěma kostkami padnou stejná čísla, máte tah navíc.',
                     symbol: 5,
+                    color: 4,
                     triggerNumbers: [],
                     canBeTriggeredByOthers: false,
                     canBeTriggeredBySelf: false
@@ -498,6 +574,7 @@ export default class GamePage extends Vue {
                     cost: 22,
                     description: 'Jednou v každém tahu smíte znovu hodit kostkami.',
                     symbol: 5,
+                    color: 4,
                     triggerNumbers: [],
                     canBeTriggeredByOthers: false,
                     canBeTriggeredBySelf: false

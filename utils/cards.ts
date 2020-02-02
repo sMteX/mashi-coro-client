@@ -8,7 +8,13 @@ export enum CardSymbol {
     Factory, // Mlekarna, Tovarna na nabytek
     Other // Obchodni dum...
 }
-
+export enum CardColor {
+    Green,
+    Blue,
+    Red,
+    Purple,
+    Dominant
+}
 export enum CardName {
     WheatField,
     Farm,
@@ -37,6 +43,7 @@ export interface Card {
     name: string;
     triggerNumbers: number[];
     symbol: CardSymbol;
+    color: CardColor;
     cost: number;
     description: string;
     canBeTriggeredByOthers: boolean;

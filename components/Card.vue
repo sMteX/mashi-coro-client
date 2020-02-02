@@ -2,8 +2,8 @@
     a-popover
         template(slot="content")
             // - winning card closeup
-            div.card(v-if="winningCards.includes(info.card.cardName)")
-                div.inner(:class="cardBackgroundMap[info.card.cardName]")
+            div.card(v-if="info.card.color === cardColor.Dominant")
+                div.inner(:class="cardBackgroundMap[info.card.color]")
                     a-row.name(type="flex" justify="center") {{ info.card.symbol }} {{ info.card.name }}
                     a-row.empty-space
                     a-row.text-center.bottom-row(type="flex" align="middle")
@@ -11,7 +11,7 @@
                         a-col(span=18) {{ info.card.description }}
             // - closeup
             div.card(v-else)
-                div.inner(:class="cardBackgroundMap[info.card.cardName]")
+                div.inner(:class="cardBackgroundMap[info.card.color]")
                     a-row(type="flex" justify="center") {{ info.card.triggerNumbers }}
                     a-row.name(type="flex" justify="center") {{ info.card.symbol }} {{ info.card.name }}
                     a-row.empty-space
@@ -25,13 +25,13 @@
         div.card-stack
             div(v-for="index in info.count-1" :class="`card_${index}`" :key="index")
             div.card-miniature(:class="{ clickable }")
-                a-row.inner(type="flex" justify="center" align="middle" :class="cardBackgroundMap[info.card.cardName]")
+                a-row.inner(type="flex" justify="center" align="middle" :class="cardBackgroundMap[info.card.color]")
                     span.text-center {{ info.card.name }}
 </template>
 
 <script>
 import { Vue, Component } from 'vue-property-decorator';
-import { CardName } from '~/utils/cards';
+import { CardColor, CardName } from '~/utils/cards';
 
 const cssBackgrounds = {
     green: 'green-bg',
@@ -51,35 +51,21 @@ const cssBackgrounds = {
             default: false,
             type: Boolean
         },
+        event: {
+            type: Function,
+            required: false
+        },
         info: Object
     }
 })
 export default class Card extends Vue {
-    winningCards = [CardName.Station, CardName.AmusementPark, CardName.ShoppingCenter, CardName.Transmitter];
+    cardColor = CardColor;
     cardBackgroundMap = {
-        [CardName.Bakery]: cssBackgrounds.green,
-        [CardName.Shop]: cssBackgrounds.green,
-        [CardName.DairyShop]: cssBackgrounds.green,
-        [CardName.FurnitureFactory]: cssBackgrounds.green,
-        [CardName.Mall]: cssBackgrounds.green,
-
-        [CardName.WheatField]: cssBackgrounds.blue,
-        [CardName.Farm]: cssBackgrounds.blue,
-        [CardName.Forest]: cssBackgrounds.blue,
-        [CardName.Mine]: cssBackgrounds.blue,
-        [CardName.ApplePark]: cssBackgrounds.blue,
-
-        [CardName.Stadium]: cssBackgrounds.purple,
-        [CardName.TelevisionStudio]: cssBackgrounds.purple,
-        [CardName.OfficeBuilding]: cssBackgrounds.purple,
-
-        [CardName.CoffeeShop]: cssBackgrounds.red,
-        [CardName.Restaurant]: cssBackgrounds.red,
-
-        [CardName.Station]: cssBackgrounds.winningInactive,
-        [CardName.ShoppingCenter]: cssBackgrounds.winningInactive,
-        [CardName.AmusementPark]: cssBackgrounds.winningInactive,
-        [CardName.Transmitter]: cssBackgrounds.winningInactive
+        [CardColor.Green]: cssBackgrounds.green,
+        [CardColor.Blue]: cssBackgrounds.blue,
+        [CardColor.Purple]: cssBackgrounds.purple,
+        [CardColor.Red]: cssBackgrounds.red,
+        [CardColor.Dominant]: cssBackgrounds.winningInactive
     };
 }
 </script>
