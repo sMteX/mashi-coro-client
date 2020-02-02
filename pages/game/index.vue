@@ -56,14 +56,8 @@
                                         // - TODO: clickable should only trigger if player is on turn and can afford
                                         Card(v-for="(card, index) in row" :info="card" :key="index" clickable)
                         a-col(span=11 offset=1)
-                            a-row(v-for="(player, pi) in otherPlayers" :key="pi")
-                                a-row
-                                    h3 {{ player.name }}
-                                a-row
-                                    p Money: {{ player.money }}
-                                a-row
-                                    a-row(type="flex" justify="start" :gutter=16 v-for="(row, rowIndex) in playerCards(player)" :key="rowIndex")
-                                        Card(v-for="(card, index) in row" :info="card" :key="index")
+                            PlayerCards(v-for="(player, index) in otherPlayers" :key="index" :player="player")
+
 </template>
 
 <script lang="ts">
@@ -72,6 +66,7 @@ import * as _ from 'lodash';
 import Logo from '~/components/Logo.vue';
 import { events as eventConstants } from '~/utils/constants';
 import { CardCount, GameStarting } from '~/utils/interfaces/events/game/input.interface';
+import PlayerCards from '~/components/PlayerCards.vue';
 import Card from '~/components/Card.vue';
 
 const io = require('socket.io-client');
@@ -116,7 +111,8 @@ interface Table {
 @Component({
     components: {
         Logo,
-        Card
+        Card,
+        PlayerCards
     },
     head: {
         title: 'Game'
