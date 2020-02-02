@@ -20,14 +20,14 @@
                     a-row
                         h3 Turn phases
                         div
-                            a-radio-group(button-style="solid")
-                                a-radio-button(v-for="(value, name, index) in turnPhases" :value="name" :key="index") {{ value }}
+                            a-radio-group(:defaultValue="currentTurnPhase" button-style="solid")
+                                a-radio-button(v-for="(value, name, index) in turnPhases" :value="Number(name)" :key="index") {{ value }}
                     a-row
                         h3 Actions
                         a(href="#" class="button--grey") Hod 1 kostkou
                         a(href="#" class="button--grey") Hod 2 kostkami
-                        a(href="#" class="button--grey") (Přidat k hodu 2)
                         a(href="#" class="button--grey") (Hodit znovu)
+                        a(href="#" class="button--grey") (Přidat k hodu 2)
                         a(href="#" class="button--grey") Ukončit tah
                     a-row
                         h3 Dice
@@ -136,6 +136,8 @@ export default class GamePage extends Vue {
         [TurnPhase.PostBuild]: 'Po stavbě',
         [TurnPhase.EndTurn]: 'Konec tahu'
     };
+
+    private currentTurnPhase: TurnPhase = TurnPhase.DiceChoice;
 
     private table: Table = {
         bank: 0,
