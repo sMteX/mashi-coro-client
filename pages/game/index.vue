@@ -24,11 +24,7 @@
                                 a-radio-button(v-for="(value, name, index) in turnPhases" :value="Number(name)" :key="index") {{ value }}
                     a-row
                         h3 Actions
-                        a(href="#" class="button--grey") Hod 1 kostkou
-                        a(href="#" class="button--grey") Hod 2 kostkami
-                        a(href="#" class="button--grey") (Hodit znovu)
-                        a(href="#" class="button--grey") (Přidat k hodu 2)
-                        a(href="#" class="button--grey") Ukončit tah
+                        a-button(v-for="(button, index) in buttons" :key="index" :disabled="!button.isActive" @click="button.handler") {{ button.text }}
                     a-row
                         h3 Dice
                         p Die #1:
@@ -107,6 +103,13 @@ interface Table {
     bank: number;
     buyableCards: CardCount[];
 }
+interface ActionButton {
+    order: number;
+    text: string;
+    isVisible: boolean;
+    handler: () => void;
+    isActive: boolean;
+}
 
 @Component({
     components: {
@@ -119,8 +122,6 @@ interface Table {
     }
 })
 export default class GamePage extends Vue {
-    private socket!: SocketIOClient.Socket;
-
     private turnPhases = {
         [TurnPhase.DiceChoice]: 'Výběr počtu kostek',
         [TurnPhase.DiceRoll]: 'Hod kostkou',
@@ -133,6 +134,44 @@ export default class GamePage extends Vue {
         [TurnPhase.EndTurn]: 'Konec tahu'
     };
 
+    private _buttons: ActionButton[] = [
+        {
+            order: 0,
+            text: 'Hod 1 kostkou',
+            isVisible: this.isRollOneDiceVisible,
+            handler: this.rollOneDice,
+            isActive: this.isRollOneDiceActive
+        },
+        {
+            order: 1,
+            text: 'Hod 2 kostkami',
+            isVisible: this.isRollTwoDiceVisible,
+            handler: this.rollTwoDice,
+            isActive: this.isRollTwoDiceActive
+        },
+        {
+            order: 2,
+            text: 'Hodit znovu',
+            isVisible: this.isRollAgainVisible,
+            handler: this.rollAgain,
+            isActive: this.isRollAgainActive
+        },
+        {
+            order: 3,
+            text: 'Přidat k hodu 2',
+            isVisible: this.isAddTwoToRollVisible,
+            handler: this.addTwoToRoll,
+            isActive: this.isAddTwoToRollActive
+        },
+        {
+            order: 4,
+            text: 'Ukončit tah',
+            isVisible: this.isEndTurnVisible,
+            handler: this.endTurn,
+            isActive: this.isEndTurnActive
+        }
+    ];
+
     private currentTurnPhase: TurnPhase = TurnPhase.DiceChoice;
 
     private table: Table = {
@@ -144,6 +183,8 @@ export default class GamePage extends Vue {
     private players: Player[] = [];
     private messages: string[] = [];
     private loaded: boolean = false;
+
+    private socket!: SocketIOClient.Socket;
 
     mounted () {
         this.dummySetup = true;
@@ -160,6 +201,88 @@ export default class GamePage extends Vue {
         // });
         this.loaded = true;
     }
+
+    // <editor-fold desc="Action buttons">
+    // <editor-fold desc="button handlers">
+    rollOneDice () {
+        this.log('1 dice rolled');
+    }
+
+    rollTwoDice () {
+        this.log('2 dice rolled');
+    }
+
+    rollAgain () {
+        this.log('Rolled again');
+    }
+
+    addTwoToRoll () {
+        this.log('Added 2 to roll');
+    }
+
+    endTurn () {
+        this.log('Ended turn');
+    }
+    // </editor-fold>
+
+    // <editor-fold desc="is visible getters">
+    get isRollOneDiceVisible (): boolean {
+        return true;
+    }
+
+    get isRollTwoDiceVisible (): boolean {
+        // TODO: if player has Station dominant
+        return true;
+    }
+
+    get isRollAgainVisible (): boolean {
+        // TODO: if player has Transmitter dominant
+        return true;
+    }
+
+    get isAddTwoToRollVisible (): boolean {
+        // TODO: if player has Dock dominant
+        return true;
+    }
+
+    get isEndTurnVisible (): boolean {
+        return true;
+    }
+    // </editor-fold>
+
+    // <editor-fold desc="is active getters">
+    get isRollOneDiceActive (): boolean {
+        // TODO: active only in DiceChoice phase
+        return true;
+    }
+
+    get isRollTwoDiceActive (): boolean {
+        // TODO: active only in DiceChoice phase
+        return true;
+    }
+
+    get isRollAgainActive (): boolean {
+        // TODO: active in PostRoll phase I think
+        return true;
+    }
+
+    get isAddTwoToRollActive (): boolean {
+        // TODO: active in PostRoll phase (after check for second roll and 10 - 12 in roll value)
+        return true;
+    }
+
+    get isEndTurnActive (): boolean {
+        // TODO: active in PostBuild or EndTurn phase (after possible building)
+        return true;
+    }
+    // </editor-fold>
+
+    get buttons () {
+        return this.$data._buttons
+            .filter((button: ActionButton) => button.isVisible)
+            .sort((a: ActionButton, b: ActionButton) => a.order - b.order);
+    }
+    // </editor-fold>
 
     get buyableCardsTable (): CardCount[][] {
         return _.chunk(this.table.buyableCards, 5);
