@@ -9,20 +9,32 @@
                 Card(v-for="(card, index) in row" :info="card" :key="index")
 </template>
 
-<script>
-import { Component, Vue } from 'vue-property-decorator';
-import Card from './Card';
+<script lang="ts">
+import 'reflect-metadata';
+import { Component, Prop, Vue } from 'vue-property-decorator';
+import Card from './Card.vue';
+import { CardCount } from '~/utils/interfaces/events/game/input.interface';
+
+// TODO: duplicate in game/index.vue
+interface Player {
+    id: number;
+    socketId: string;
+    name: string;
+
+    cards: CardCount[];
+    money: number;
+    winningCards: CardCount[];
+}
 
 @Component({
-    props: {
-        player: Object
-    },
     components: {
         Card
     }
 })
 export default class PlayerCards extends Vue {
-    get playerCards () {
+    @Prop() readonly player!: Player;
+
+    get playerCards (): CardCount[][] {
         const cards = [];
         cards.push([...this.player.winningCards]);
         cards.push([...this.player.cards.filter(({ card }) => card.canBeTriggeredByOthers)]);
