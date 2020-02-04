@@ -5,15 +5,15 @@
                 logo
             a-row
                 h1 Game
-                div
+                a-row
                     h3 Players:
                     ul
                         li(v-for="player in players")
                             span {{ player.name }} - {{ player.id }}
-                div.links
+                // -div.links
                     nuxt-link(to="/lobby" class="button--grey") Back to lobby
                     a(href="#" class="button--grey" v-on:click="useDummyData") Use dummy data for UI design
-                div
+                a-row
                     ul
                         li(v-for="message in lastMessages") {{ message }}
                 a-row.game(v-if="loaded")
@@ -22,13 +22,14 @@
                         div
                             a-radio-group(:defaultValue="currentTurnPhase" button-style="solid")
                                 a-radio-button(v-for="(value, name, index) in turnPhases" :value="Number(name)" :key="index") {{ value }}
-                    a-row
+                    a-row(v-if="isPlayerOnTurn")
                         h3 Actions
                         a-button(v-for="(button, index) in buttons" :key="index" :disabled="!button.isActive" @click="button.handler") {{ button.text }}
                     a-row
                         h3 Dice
-                        p Die #1:
-                        p Die #2:
+                        p Die #1: {{ dice.first }}
+                        p(v-if="chosenAmountOfDice === 2") Die #2: {{ dice.second }}
+                        p Sum: {{ dice.sum }}
                     a-row
                         a-col(span=12)
                             a-row
@@ -37,20 +38,22 @@
                                 a-row
                                     p Money: {{ thisPlayer.money }}
                                 a-row
+                                    // - dominants
                                     a-row(type="flex" justify="start" :gutter=16)
-                                        // - TODO: only when player is on turn and can afford
-                                        Card(v-for="(card, index) in playerCards(thisPlayer)[0]" :info="card" :key="index" clickable)
+                                        Card(v-for="(card, index) in playerCards(thisPlayer)[0]" :info="card" :key="index" :clickable="isCardClickable(card)")
+                                    // - normal cards
                                     a-row(type="flex" justify="start" :gutter=16 v-for="(row, rowIndex) in playerCards(thisPlayer).slice(1)" :key="rowIndex")
                                         Card(v-for="(card, index) in row" :info="card" :key="index")
                             a-row
                                 a-row
                                     h3 Table
                                 a-row
+                                    // - probably not even needed
                                     p Bank: {{ table.bank }}
                                 a-row
                                     a-row(type="flex" justify="space-around" v-for="(row, rowIndex) in buyableCardsTable" :key="rowIndex")
                                         // - TODO: clickable should only trigger if player is on turn and can afford
-                                        Card(v-for="(card, index) in row" :info="card" :key="index" clickable)
+                                        Card(v-for="(card, index) in row" :info="card" :key="index" :clickable="isCardClickable(card)" :clickEvent="buyCard")
                         a-col(span=11 offset=1)
                             PlayerCards(v-for="(player, index) in otherPlayers" :key="index" :player="player")
 
@@ -61,9 +64,17 @@ import { Component, Vue } from 'vue-property-decorator';
 import * as _ from 'lodash';
 import Logo from '~/components/Logo.vue';
 import { events as eventConstants } from '~/utils/constants';
-import { CardCount, GameStarting } from '~/utils/interfaces/events/game/input.interface';
+import {
+    AirportGain, AmusementParkNewTurn,
+    BlueCardEffects,
+    CardCount,
+    DiceRollOutput,
+    GameDataLoad, GreenCardEffects, NewTurn, PlayerBoughtCard,
+    RedCardEffects
+} from '~/utils/interfaces/events/game/input.interface';
 import PlayerCards from '~/components/PlayerCards.vue';
 import Card from '~/components/Card.vue';
+import { CardName } from '~/utils/cards';
 
 const io = require('socket.io-client');
 const { game: events } = eventConstants;
@@ -151,20 +162,27 @@ export default class GamePage extends Vue {
         },
         {
             order: 2,
+            text: 'Nechat si kostky',
+            isVisible: this.isKeepDiceVisible,
+            handler: this.keepDice,
+            isActive: this.isKeepDiceActive
+        },
+        {
+            order: 3,
             text: 'Hodit znovu',
             isVisible: this.isRollAgainVisible,
             handler: this.rollAgain,
             isActive: this.isRollAgainActive
         },
         {
-            order: 3,
+            order: 4,
             text: 'Přidat k hodu 2',
             isVisible: this.isAddTwoToRollVisible,
             handler: this.addTwoToRoll,
             isActive: this.isAddTwoToRollActive
         },
         {
-            order: 4,
+            order: 5,
             text: 'Ukončit tah',
             isVisible: this.isEndTurnVisible,
             handler: this.endTurn,
@@ -183,8 +201,28 @@ export default class GamePage extends Vue {
     private players: Player[] = [];
     private messages: string[] = [];
     private loaded: boolean = false;
+    private started: boolean = false;
+    private gameSlug: string = '';
 
     private socket!: SocketIOClient.Socket;
+
+    private chosenAmountOfDice: number = 1;
+    private activePlayerId: number = -1;
+    private alreadyUsedTransmitter: boolean = false;
+    private alreadyBought: boolean = false;
+
+    private dice = {
+        first: -1,
+        second: -1,
+        sum: 0
+    };
+
+    resetDefaultValues () {
+        this.chosenAmountOfDice = 1;
+        this.alreadyBought = false;
+        this.alreadyUsedTransmitter = false;
+        this.currentTurnPhase = TurnPhase.DiceChoice;
+    }
 
     mounted () {
         this.dummySetup = true;
@@ -195,33 +233,106 @@ export default class GamePage extends Vue {
         //     `${process.env.serverUrl}/${events.namespaceName}`
         // );
         // this.setupHandlers();
+        // this.gameSlug = this.$route.query.id;
         // this.socket.emit(events.output.PLAYER_CONNECT, {
-        //     game: this.$route.query.id,
+        //     game: this.gameSlug,
         //     id: Number(this.$route.query.playerId)
         // });
         this.loaded = true;
+    }
+
+    get isPlayerOnTurn (): boolean {
+        return this.started && this.thisPlayer.id === this.activePlayerId;
+    }
+
+    buyCard (card: CardName) {
+        // this shouldn't get called in wrong times, no need for checks?
+
+        // TODO: add card to player/flip dominant
+        // TODO: possibly remove to player
+
+        this.socket.emit(events.output.BUY_CARD, {
+            card,
+            game: this.gameSlug,
+            playerId: this.thisPlayer.id
+        });
+        this.alreadyBought = true;
+    }
+
+    isCardClickable ({ card }: CardCount): boolean {
+        return this.isPlayerOnTurn &&
+                this.currentTurnPhase === TurnPhase.Build &&
+                !this.alreadyBought &&
+                this.thisPlayer.money >= card.cost;
     }
 
     // <editor-fold desc="Action buttons">
     // <editor-fold desc="button handlers">
     rollOneDice () {
         this.log('1 dice rolled');
+        if (!this.dummySetup) {
+            this.chosenAmountOfDice = 1;
+            this.currentTurnPhase = TurnPhase.DiceRoll;
+            this.socket.emit(events.output.DICE_ROLL, {
+                game: this.gameSlug,
+                diceCount: 1,
+                playerId: this.thisPlayer.id,
+                transmitter: false
+            });
+        }
     }
 
     rollTwoDice () {
         this.log('2 dice rolled');
+        if (!this.dummySetup) {
+            this.chosenAmountOfDice = 2;
+            this.currentTurnPhase = TurnPhase.DiceRoll;
+            this.socket.emit(events.output.DICE_ROLL, {
+                game: this.gameSlug,
+                diceCount: 2,
+                playerId: this.thisPlayer.id,
+                transmitter: false
+            });
+        }
+    }
+
+    keepDice () {
+        this.log('Kept the dice');
+        if (!this.dummySetup) {
+            this.alreadyUsedTransmitter = true; // technically "used", we used the CHOICE to not roll again
+            this.socket.emit(events.output.END_ROLL, {
+                game: this.gameSlug,
+                playerId: this.thisPlayer.id
+            });
+        }
     }
 
     rollAgain () {
         this.log('Rolled again');
+        if (!this.dummySetup) {
+            this.alreadyUsedTransmitter = true;
+            this.socket.emit(events.output.DICE_ROLL, {
+                game: this.gameSlug,
+                diceCount: this.chosenAmountOfDice,
+                playerId: this.thisPlayer.id,
+                transmitter: true
+            });
+        }
     }
 
     addTwoToRoll () {
         this.log('Added 2 to roll');
+        // TODO: implement
     }
 
     endTurn () {
         this.log('Ended turn');
+        if (!this.dummySetup) {
+            this.socket.emit(events.output.END_TURN, {
+                game: this.gameSlug,
+                playerId: this.thisPlayer.id
+            });
+        }
     }
     // </editor-fold>
 
@@ -231,18 +342,23 @@ export default class GamePage extends Vue {
     }
 
     get isRollTwoDiceVisible (): boolean {
-        // TODO: if player has Station dominant
-        return true;
+        return this.playerHasCard(CardName.Station);
+        // return true;
+    }
+
+    get isKeepDiceVisible (): boolean {
+        return this.playerHasCard(CardName.Transmitter);
+        // return true;
     }
 
     get isRollAgainVisible (): boolean {
-        // TODO: if player has Transmitter dominant
-        return true;
+        return this.playerHasCard(CardName.Transmitter);
+        // return true;
     }
 
     get isAddTwoToRollVisible (): boolean {
         // TODO: if player has Dock dominant
-        return true;
+        return false;
     }
 
     get isEndTurnVisible (): boolean {
@@ -252,18 +368,23 @@ export default class GamePage extends Vue {
 
     // <editor-fold desc="is active getters">
     get isRollOneDiceActive (): boolean {
-        // TODO: active only in DiceChoice phase
-        return true;
+        return this.currentTurnPhase === TurnPhase.DiceChoice;
+        // return true;
     }
 
     get isRollTwoDiceActive (): boolean {
-        // TODO: active only in DiceChoice phase
-        return true;
+        return this.currentTurnPhase === TurnPhase.DiceChoice; // technically a check for Station but the button should be already hidden without Station
+        // return true;
+    }
+
+    get isKeepDiceActive (): boolean {
+        return this.currentTurnPhase === TurnPhase.PostRoll && !this.alreadyUsedTransmitter;
+        // return true;
     }
 
     get isRollAgainActive (): boolean {
-        // TODO: active in PostRoll phase I think
-        return true;
+        return this.currentTurnPhase === TurnPhase.PostRoll && !this.alreadyUsedTransmitter;
+        // return true;
     }
 
     get isAddTwoToRollActive (): boolean {
@@ -272,8 +393,9 @@ export default class GamePage extends Vue {
     }
 
     get isEndTurnActive (): boolean {
-        // TODO: active in PostBuild or EndTurn phase (after possible building)
-        return true;
+        return this.currentTurnPhase > TurnPhase.PurpleCards;
+        // return this.currentTurnPhase === TurnPhase.PostBuild || this.currentTurnPhase === TurnPhase.EndTurn;
+        // return true;
     }
     // </editor-fold>
 
@@ -283,6 +405,17 @@ export default class GamePage extends Vue {
             .sort((a: ActionButton, b: ActionButton) => a.order - b.order);
     }
     // </editor-fold>
+
+    playerHasCard (card: CardName): boolean {
+        if ([CardName.Station, CardName.ShoppingCenter, CardName.AmusementPark, CardName.Transmitter].includes(card)) {
+            // we always have winning cards, but they might not be bought
+            const dominant = this.thisPlayer.winningCards.map(wc => wc.card).find(wc => wc.cardName === card);
+            // TODO: first ! because we know the dominant exists (just find() returns |undefined)
+            // TODO: second ! because dominants always have the bought flag
+            return dominant!.bought!;
+        }
+        return this.thisPlayer.cards.filter(cc => cc.card.cardName === card).length > 0;
+    }
 
     get buyableCardsTable (): CardCount[][] {
         return _.chunk(this.table.buyableCards, 5);
@@ -325,7 +458,8 @@ export default class GamePage extends Vue {
 
     useDummyData () {
         // mimics real data returned
-        const data: GameStarting = {
+        const data: GameDataLoad = {
+            startingPlayerId: 9,
             players: [
                 {
                     id: 9,
@@ -705,6 +839,7 @@ export default class GamePage extends Vue {
         };
         this.table.bank = data.bank;
         this.table.buyableCards = [...data.buyableCards];
+        this.activePlayerId = data.startingPlayerId;
         this.players.push(...data.players.map(player => ({
             id: player.id,
             socketId: player.socketId,
@@ -722,9 +857,93 @@ export default class GamePage extends Vue {
     }
 
     setupHandlers () {
-        this.socket.on(events.input.GAME_STARTING, (data: GameStarting) => {
-            console.log('Game starting soon, received data:', data);
-        });
+        this.socket
+            .on(events.input.GAME_DATA_LOAD, (data: GameDataLoad) => {
+                console.log('Game starting soon, received data:', data);
+                this.table.bank = data.bank;
+                this.table.buyableCards = [...data.buyableCards];
+                this.activePlayerId = data.startingPlayerId;
+                this.players.push(...data.players.map(player => ({
+                    id: player.id,
+                    socketId: player.socketId,
+                    name: player.name,
+                    money: player.money,
+                    cards: [...player.cards],
+                    winningCards: data.winningCards.map(card => ({
+                        card: {
+                            ...card,
+                            bought: false
+                        },
+                        count: 1
+                    }))
+                })));
+                this.loaded = true;
+            })
+            .on(events.input.GAME_STARTING, () => {
+                this.log('Game starting now');
+                this.started = true;
+            })
+            .on(events.input.DICE_ROLL_OUTPUT, (data: DiceRollOutput) => {
+                this.log(`Player ${data.player} rolled ${data.transmitter ? 'again ' : ''}these dice: ${data.dice}`);
+                this.currentTurnPhase = TurnPhase.PostRoll;
+                const [first, second] = data.dice;
+                this.dice.first = first;
+                this.dice.second = second;
+                this.dice.sum = data.sum;
+
+                if (!this.playerHasCard(CardName.Transmitter)) {
+                    // TODO: handle Port
+                    this.socket.emit(events.output.END_ROLL, {
+                        game: this.gameSlug,
+                        playerId: this.thisPlayer.id
+                    });
+                }
+            })
+            .on(events.input.FINAL_DICE_ROLL, (data: DiceRollOutput) => {
+                this.log(`Final roll of player ${data.player} is ${data.dice}`);
+                const [first, second] = data.dice;
+                this.dice.first = first;
+                this.dice.second = second;
+                this.dice.sum = data.sum;
+                this.currentTurnPhase = TurnPhase.RedCards;
+            })
+            .on(events.input.RED_CARD_EFFECTS, (data: RedCardEffects) => {
+                const gainStrings = Object.entries(data.gains).map(([id, gain]) => `Player ${id} gains ${gain} coins from player ${data.fromPlayer}.`);
+                const newMoneyStrings = Object.entries(data.newMoney).map(([id, money]) => `Player ${id} now has ${money} coins.`);
+                // TODO: save the values to actually show up
+                this.log(gainStrings.join() + newMoneyStrings.join());
+                this.currentTurnPhase = TurnPhase.BlueGreenCards;
+            })
+            .on(events.input.BLUE_CARD_EFFECTS, (data: BlueCardEffects) => {
+                const gainStrings = Object.entries(data.gains).map(([id, gain]) => `Player ${id} gains ${gain} coins.`);
+                const newMoneyStrings = Object.entries(data.newMoney).map(([id, money]) => `Player ${id} now has ${money} coins.`);
+                // TODO: save the values to actually show up
+                this.log(gainStrings.join() + newMoneyStrings.join());
+            })
+            .on(events.input.GREEN_CARD_EFFECTS, (data: GreenCardEffects) => {
+                this.log(`Player ${data.player} gets ${data.gains} coins and now has ${data.newMoney} coins.`);
+                this.currentTurnPhase = TurnPhase.PurpleCards;
+            })
+            .on(events.input.BUILDING_POSSIBLE, () => {
+                this.log('You can build now');
+                this.currentTurnPhase = TurnPhase.Build;
+            })
+            .on(events.input.PLAYER_BOUGHT_CARD, (data: PlayerBoughtCard) => {
+                this.log(`Player ${data.player} bought card ${data.card}`);
+                this.currentTurnPhase = TurnPhase.EndTurn;
+            })
+            .on(events.input.AIRPORT_GAIN, ({ player }: AirportGain) => {
+                this.log(`Player ${player} didn't build anything, they get 10 coins from Airport.`);
+            })
+            .on(events.input.AMUSEMENT_PARK_NEW_TURN, ({ player }: AmusementParkNewTurn) => {
+                this.log(`Player ${player} gets a new turn because of Amusement Park`);
+                this.resetDefaultValues();
+            })
+            .on(events.input.NEW_TURN, ({ oldPlayer, newPlayer }: NewTurn) => {
+                this.log(`Player ${oldPlayer} finished turn, new player: ${newPlayer}`);
+                this.activePlayerId = newPlayer;
+                this.resetDefaultValues();
+            });
     }
 }
 </script>

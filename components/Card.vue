@@ -24,14 +24,16 @@
         // - miniature
         div.card-stack
             div(v-for="index in info.count-1" :class="`card_${index}`" :key="index")
-            div.card-miniature(:class="{ clickable }")
+            div.card-miniature(:class="{ clickable }" @click="triggerClick")
                 a-row.inner(type="flex" justify="center" align="middle" :class="cardBackgroundMap[info.card.color]")
                     span.text-center {{ info.card.name }}
 </template>
 
-<script>
-import { Vue, Component } from 'vue-property-decorator';
-import { CardColor, CardName } from '~/utils/cards';
+<script lang="ts">
+import 'reflect-metadata';
+import { Prop, Vue, Component } from 'vue-property-decorator';
+import { CardColor } from '~/utils/cards';
+import { CardCount } from '~/utils/interfaces/events/game/input.interface';
 
 const cssBackgrounds = {
     green: 'green-bg',
@@ -46,19 +48,23 @@ const cssBackgrounds = {
     components: {
     },
     props: {
-        clickable: {
-            required: false,
-            default: false,
-            type: Boolean
-        },
-        event: {
-            type: Function,
-            required: false
-        },
-        info: Object
+        // clickable: {
+        //     required: false,
+        //     default: false,
+        //     type: Boolean
+        // },
+        // clickEvent: {
+        //     type: Function,
+        //     required: false
+        // },
+        // info: Object
     }
 })
 export default class Card extends Vue {
+    @Prop() readonly clickable?: boolean = false;
+    @Prop() readonly clickEvent?: (...args: any[]) => void;
+    @Prop() readonly info!: CardCount;
+
     cardColor = CardColor;
     cardBackgroundMap = {
         [CardColor.Green]: cssBackgrounds.green,
@@ -67,6 +73,13 @@ export default class Card extends Vue {
         [CardColor.Red]: cssBackgrounds.red,
         [CardColor.Dominant]: cssBackgrounds.winningInactive
     };
+
+    triggerClick () {
+        if (this.clickEvent) {
+            console.log('Card clicked');
+            this.clickEvent(this.info.card.cardName);
+        }
+    }
 }
 </script>
 
