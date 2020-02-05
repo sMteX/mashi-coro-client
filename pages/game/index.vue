@@ -10,9 +10,6 @@
                     ul
                         li(v-for="player in players")
                             span {{ player.name }} - {{ player.id }}
-                // -div.links
-                    nuxt-link(to="/lobby" class="button--grey") Back to lobby
-                    a(href="#" class="button--grey" v-on:click="useDummyData") Use dummy data for UI design
                 a-row
                     ul
                         li(v-for="message in lastMessages") {{ message }}
@@ -52,7 +49,6 @@
                                     p Bank: {{ table.bank }}
                                 a-row
                                     a-row(type="flex" justify="space-around" v-for="(row, rowIndex) in buyableCardsTable" :key="rowIndex")
-                                        // - TODO: clickable should only trigger if player is on turn and can afford
                                         Card(v-for="(card, index) in row" :info="card" :key="index" :clickable="isCardClickable(card)" :clickEvent="buyCard")
                         a-col(span=11 offset=1)
                             PlayerCards(v-for="(player, index) in otherPlayers" :key="index" :player="player")
@@ -247,10 +243,6 @@ export default class GamePage extends Vue {
 
     buyCard (card: CardName) {
         // this shouldn't get called in wrong times, no need for checks?
-
-        // TODO: add card to player/flip dominant
-        // TODO: possibly remove to player
-
         this.socket.emit(events.output.BUY_CARD, {
             card,
             game: this.gameSlug,
@@ -438,8 +430,8 @@ export default class GamePage extends Vue {
         console.log(message);
     }
 
-    findPlayer (id: string) {
-        return this.players.find(p => p.socketId === id)!;
+    findPlayer (id: number|string) {
+        return this.players.find(p => p.socketId === id || p.id === id)!;
     }
 
     get thisPlayer (): Player {
@@ -930,6 +922,8 @@ export default class GamePage extends Vue {
             })
             .on(events.input.PLAYER_BOUGHT_CARD, (data: PlayerBoughtCard) => {
                 this.log(`Player ${data.player} bought card ${data.card}`);
+                // TODO: add card to player/flip dominant
+                // TODO: remove from table
                 this.currentTurnPhase = TurnPhase.EndTurn;
             })
             .on(events.input.AIRPORT_GAIN, ({ player }: AirportGain) => {
