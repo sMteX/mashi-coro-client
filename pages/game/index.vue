@@ -118,6 +118,8 @@ interface ActionButton {
     isActive: boolean;
 }
 
+const dominants = [CardName.Station, CardName.ShoppingCenter, CardName.AmusementPark, CardName.Transmitter];
+
 @Component({
     components: {
         Logo,
@@ -334,17 +336,17 @@ export default class GamePage extends Vue {
     }
 
     get isRollTwoDiceVisible (): boolean {
-        return this.playerHasCard(CardName.Station);
+        return this.playerHasCard(this.thisPlayer, CardName.Station);
         // return true;
     }
 
     get isKeepDiceVisible (): boolean {
-        return this.playerHasCard(CardName.Transmitter);
+        return this.playerHasCard(this.thisPlayer, CardName.Transmitter);
         // return true;
     }
 
     get isRollAgainVisible (): boolean {
-        return this.playerHasCard(CardName.Transmitter);
+        return this.playerHasCard(this.thisPlayer, CardName.Transmitter);
         // return true;
     }
 
@@ -398,15 +400,15 @@ export default class GamePage extends Vue {
     }
     // </editor-fold>
 
-    playerHasCard (card: CardName): boolean {
-        if ([CardName.Station, CardName.ShoppingCenter, CardName.AmusementPark, CardName.Transmitter].includes(card)) {
+    playerHasCard (player: Player, card: CardName): boolean {
+        if (dominants.includes(card)) {
             // we always have winning cards, but they might not be bought
-            const dominant = this.thisPlayer.winningCards.map(wc => wc.card).find(wc => wc.cardName === card);
+            const dominant = player.winningCards.map(wc => wc.card).find(wc => wc.cardName === card);
             // TODO: first ! because we know the dominant exists (just find() returns |undefined)
             // TODO: second ! because dominants always have the bought flag
             return dominant!.bought!;
         }
-        return this.thisPlayer.cards.filter(cc => cc.card.cardName === card).length > 0;
+        return player.cards.filter(cc => cc.card.cardName === card).length > 0;
     }
 
     get buyableCardsTable (): CardCount[][] {
@@ -883,7 +885,7 @@ export default class GamePage extends Vue {
                 this.dice.second = second;
                 this.dice.sum = data.sum;
 
-                if (!this.playerHasCard(CardName.Transmitter)) {
+                if (!this.playerHasCard(this.thisPlayer, CardName.Transmitter)) {
                     // TODO: handle Port
                     this.socket.emit(events.output.END_ROLL, {
                         game: this.gameSlug,
@@ -922,8 +924,17 @@ export default class GamePage extends Vue {
             })
             .on(events.input.PLAYER_BOUGHT_CARD, (data: PlayerBoughtCard) => {
                 this.log(`Player ${data.player} bought card ${data.card}`);
-                // TODO: add card to player/flip dominant
-                // TODO: remove from table
+
+                const player = this.findPlayer(data.player);
+                this.addCardToPlayer(player, data.card);
+
+                // remove from table
+                const card = this.table.buyableCards.find(cc => cc.card.cardName === data.card)!;
+                card.count -= 1;
+                if (card.count === 0) {
+                    this.table.buyableCards = this.table.buyableCards.filter(cc => cc.card.cardName !== data.card);
+                }
+
                 this.currentTurnPhase = TurnPhase.EndTurn;
             })
             .on(events.input.AIRPORT_GAIN, ({ player }: AirportGain) => {
@@ -938,6 +949,22 @@ export default class GamePage extends Vue {
                 this.activePlayerId = newPlayer;
                 this.resetDefaultValues();
             });
+    }
+
+    addCardToPlayer (player: Player, card: CardName) {
+        if (dominants.includes(card)) {
+            const cardObj = player.winningCards.map(cc => cc.card).find(c => c.cardName === card)!;
+            cardObj.bought = true;
+            player.money -= cardObj.cost;
+        } else if (this.playerHasCard(player, card)) {
+            const cardObj = player.cards.find(cc => cc.card.cardName === card)!;
+            cardObj.count += 1;
+            player.money -= cardObj.card.cost;
+        } else {
+            const cardObj = this.table.buyableCards.map(cc => cc.card).find(c => c.cardName === card)!;
+            player.cards.push({ card: cardObj, count: 1 });
+            player.money -= cardObj.cost;
+        }
     }
 }
 </script>
