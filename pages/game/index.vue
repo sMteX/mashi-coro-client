@@ -404,8 +404,8 @@ export default class GamePage extends Vue {
         if (dominants.includes(card)) {
             // we always have winning cards, but they might not be bought
             const dominant = player.winningCards.map(wc => wc.card).find(wc => wc.cardName === card);
-            // TODO: first ! because we know the dominant exists (just find() returns |undefined)
-            // TODO: second ! because dominants always have the bought flag
+            // first ! because we know the dominant exists (just find() returns |undefined)
+            // second ! because dominants always have the bought flag
             return dominant!.bought!;
         }
         return player.cards.filter(cc => cc.card.cardName === card).length > 0;
@@ -903,19 +903,27 @@ export default class GamePage extends Vue {
             })
             .on(events.input.RED_CARD_EFFECTS, (data: RedCardEffects) => {
                 const gainStrings = Object.entries(data.gains).map(([id, gain]) => `Player ${id} gains ${gain} coins from player ${data.fromPlayer}.`);
-                const newMoneyStrings = Object.entries(data.newMoney).map(([id, money]) => `Player ${id} now has ${money} coins.`);
-                // TODO: save the values to actually show up
+                const newMoneyStrings = Object.entries(data.newMoney).map(([id, money]) => {
+                    const p = this.findPlayer(id);
+                    p.money = money;
+                    return `Player ${id} now has ${money} coins.`;
+                });
                 this.log(gainStrings.join() + newMoneyStrings.join());
                 this.currentTurnPhase = TurnPhase.BlueGreenCards;
             })
             .on(events.input.BLUE_CARD_EFFECTS, (data: BlueCardEffects) => {
                 const gainStrings = Object.entries(data.gains).map(([id, gain]) => `Player ${id} gains ${gain} coins.`);
-                const newMoneyStrings = Object.entries(data.newMoney).map(([id, money]) => `Player ${id} now has ${money} coins.`);
-                // TODO: save the values to actually show up
+                const newMoneyStrings = Object.entries(data.newMoney).map(([id, money]) => {
+                    const p = this.findPlayer(id);
+                    p.money = money;
+                    return `Player ${id} now has ${money} coins.`;
+                });
                 this.log(gainStrings.join() + newMoneyStrings.join());
             })
             .on(events.input.GREEN_CARD_EFFECTS, (data: GreenCardEffects) => {
                 this.log(`Player ${data.player} gets ${data.gains} coins and now has ${data.newMoney} coins.`);
+                const p = this.findPlayer(data.player);
+                p.money = data.newMoney;
                 this.currentTurnPhase = TurnPhase.PurpleCards;
             })
             .on(events.input.BUILDING_POSSIBLE, () => {
@@ -939,6 +947,8 @@ export default class GamePage extends Vue {
             })
             .on(events.input.AIRPORT_GAIN, ({ player }: AirportGain) => {
                 this.log(`Player ${player} didn't build anything, they get 10 coins from Airport.`);
+                const p = this.findPlayer(player);
+                p.money += 10;
             })
             .on(events.input.AMUSEMENT_PARK_NEW_TURN, ({ player }: AmusementParkNewTurn) => {
                 this.log(`Player ${player} gets a new turn because of Amusement Park`);
