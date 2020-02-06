@@ -65,7 +65,7 @@ import {
     BlueCardEffects,
     CardCount,
     DiceRollOutput,
-    GameDataLoad, GreenCardEffects, NewTurn, PlayerBoughtCard,
+    GameDataLoad, GreenCardEffects, NewTurn, PlayerBoughtCard, PlayerLeftGame,
     RedCardEffects
 } from '~/utils/interfaces/events/game/input.interface';
 import PlayerCards from '~/components/PlayerCards.vue';
@@ -958,23 +958,30 @@ export default class GamePage extends Vue {
                 this.log(`Player ${oldPlayer} finished turn, new player: ${newPlayer}`);
                 this.activePlayerId = newPlayer;
                 this.resetDefaultValues();
+            })
+            .on(events.input.PLAYER_LEFT_GAME, ({ playerId }: PlayerLeftGame) => {
+                this.log(`Player ${playerId} has left the game.`);
+                this.players = this.players.filter(p => p.id !== playerId);
             });
     }
 
     addCardToPlayer (player: Player, card: CardName) {
+        let cost = -1;
         if (dominants.includes(card)) {
             const cardObj = player.winningCards.map(cc => cc.card).find(c => c.cardName === card)!;
             cardObj.bought = true;
-            player.money -= cardObj.cost;
+            cost = cardObj.cost;
         } else if (this.playerHasCard(player, card)) {
             const cardObj = player.cards.find(cc => cc.card.cardName === card)!;
             cardObj.count += 1;
-            player.money -= cardObj.card.cost;
+            cost = cardObj.card.cost;
         } else {
             const cardObj = this.table.buyableCards.map(cc => cc.card).find(c => c.cardName === card)!;
             player.cards.push({ card: cardObj, count: 1 });
-            player.money -= cardObj.cost;
+            cost = cardObj.cost;
         }
+        player.money -= cost;
+        this.table.bank += cost;
     }
 }
 </script>

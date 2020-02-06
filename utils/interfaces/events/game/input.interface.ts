@@ -57,3 +57,6 @@ export interface NewTurn {
     oldPlayer: number;
     newPlayer: number;
 }
+export interface PlayerLeftGame {
+    playerId: number;
+}
