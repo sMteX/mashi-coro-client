@@ -60,3 +60,6 @@ export interface NewTurn {
 export interface PlayerLeftGame {
     playerId: number;
 }
+export interface PlayerWonGame {
+    playerId: number;
+}

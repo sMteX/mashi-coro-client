@@ -65,7 +65,7 @@ import {
     BlueCardEffects,
     CardCount,
     DiceRollOutput,
-    GameDataLoad, GreenCardEffects, NewTurn, PlayerBoughtCard, PlayerLeftGame,
+    GameDataLoad, GreenCardEffects, NewTurn, PlayerBoughtCard, PlayerLeftGame, PlayerWonGame,
     RedCardEffects
 } from '~/utils/interfaces/events/game/input.interface';
 import PlayerCards from '~/components/PlayerCards.vue';
@@ -962,6 +962,10 @@ export default class GamePage extends Vue {
             .on(events.input.PLAYER_LEFT_GAME, ({ playerId }: PlayerLeftGame) => {
                 this.log(`Player ${playerId} has left the game.`);
                 this.players = this.players.filter(p => p.id !== playerId);
+            })
+            .on(events.input.PLAYER_WON_GAME, ({ playerId }: PlayerWonGame) => {
+                this.log(`Player ${playerId} has won the game.`);
+                // TODO: something
             });
     }
 
