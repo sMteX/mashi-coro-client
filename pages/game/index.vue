@@ -61,16 +61,22 @@ import * as _ from 'lodash';
 import Logo from '~/components/Logo.vue';
 import { events as eventConstants } from '~/utils/constants';
 import {
-    AirportGain, AmusementParkNewTurn,
+    AirportGain,
+    AmusementParkNewTurn,
     BlueCardEffects,
     CardCount,
     DiceRollOutput,
-    GameDataLoad, GreenCardEffects, NewTurn, PlayerBoughtCard, PlayerLeftGame, PlayerWonGame,
+    GameDataLoad,
+    GreenCardEffects,
+    NewTurn,
+    PlayerBoughtCard,
+    PlayerLeftGame,
+    PlayerWonGame,
     RedCardEffects
 } from '~/utils/interfaces/events/game/input.interface';
 import PlayerCards from '~/components/PlayerCards.vue';
 import Card from '~/components/Card.vue';
-import { CardName } from '~/utils/cards';
+import { CardColor, CardName } from '~/utils/cards';
 
 const io = require('socket.io-client');
 const { game: events } = eventConstants;
@@ -418,8 +424,8 @@ export default class GamePage extends Vue {
     playerCards (player: Player): CardCount[][] {
         const cards: CardCount[][] = [];
         cards.push([...player.winningCards]);
-        cards.push([...player.cards.filter(({ card }) => card.canBeTriggeredByOthers)]);
-        cards.push([...player.cards.filter(({ card }) => !card.canBeTriggeredByOthers)]);
+        cards.push([...player.cards.filter(({ card }) => card.color === CardColor.Red || card.color === CardColor.Blue)]);
+        cards.push([...player.cards.filter(({ card }) => card.color === CardColor.Green)]);
         return cards;
     }
 
@@ -470,9 +476,7 @@ export default class GamePage extends Vue {
                                 color: 1,
                                 triggerNumbers: [
                                     1
-                                ],
-                                canBeTriggeredByOthers: true,
-                                canBeTriggeredBySelf: true
+                                ]
                             },
                             count: 1
                         },
@@ -487,9 +491,7 @@ export default class GamePage extends Vue {
                                 triggerNumbers: [
                                     2,
                                     3
-                                ],
-                                canBeTriggeredByOthers: false,
-                                canBeTriggeredBySelf: true
+                                ]
                             },
                             count: 1
                         }
@@ -511,9 +513,7 @@ export default class GamePage extends Vue {
                                 color: 1,
                                 triggerNumbers: [
                                     1
-                                ],
-                                canBeTriggeredByOthers: true,
-                                canBeTriggeredBySelf: true
+                                ]
                             },
                             count: 1
                         },
@@ -528,9 +528,7 @@ export default class GamePage extends Vue {
                                 triggerNumbers: [
                                     2,
                                     3
-                                ],
-                                canBeTriggeredByOthers: false,
-                                canBeTriggeredBySelf: true
+                                ]
                             },
                             count: 1
                         }
@@ -549,9 +547,7 @@ export default class GamePage extends Vue {
                         color: 1,
                         triggerNumbers: [
                             1
-                        ],
-                        canBeTriggeredByOthers: true,
-                        canBeTriggeredBySelf: true
+                        ]
                     },
                     count: 6
                 },
@@ -565,9 +561,7 @@ export default class GamePage extends Vue {
                         color: 1,
                         triggerNumbers: [
                             2
-                        ],
-                        canBeTriggeredByOthers: true,
-                        canBeTriggeredBySelf: true
+                        ]
                     },
                     count: 6
                 },
@@ -582,9 +576,7 @@ export default class GamePage extends Vue {
                         triggerNumbers: [
                             2,
                             3
-                        ],
-                        canBeTriggeredByOthers: false,
-                        canBeTriggeredBySelf: true
+                        ]
                     },
                     count: 6
                 },
@@ -598,9 +590,7 @@ export default class GamePage extends Vue {
                         color: 2,
                         triggerNumbers: [
                             3
-                        ],
-                        canBeTriggeredByOthers: true,
-                        canBeTriggeredBySelf: false
+                        ]
                     },
                     count: 6
                 },
@@ -614,9 +604,7 @@ export default class GamePage extends Vue {
                         color: 0,
                         triggerNumbers: [
                             4
-                        ],
-                        canBeTriggeredByOthers: false,
-                        canBeTriggeredBySelf: true
+                        ]
                     },
                     count: 6
                 },
@@ -630,9 +618,7 @@ export default class GamePage extends Vue {
                         color: 1,
                         triggerNumbers: [
                             5
-                        ],
-                        canBeTriggeredByOthers: true,
-                        canBeTriggeredBySelf: true
+                        ]
                     },
                     count: 6
                 },
@@ -646,9 +632,7 @@ export default class GamePage extends Vue {
                         color: 3,
                         triggerNumbers: [
                             6
-                        ],
-                        canBeTriggeredByOthers: false,
-                        canBeTriggeredBySelf: true
+                        ]
                     },
                     count: 4
                 },
@@ -662,9 +646,7 @@ export default class GamePage extends Vue {
                         color: 3,
                         triggerNumbers: [
                             6
-                        ],
-                        canBeTriggeredByOthers: false,
-                        canBeTriggeredBySelf: true
+                        ]
                     },
                     count: 4
                 },
@@ -678,9 +660,7 @@ export default class GamePage extends Vue {
                         color: 3,
                         triggerNumbers: [
                             6
-                        ],
-                        canBeTriggeredByOthers: false,
-                        canBeTriggeredBySelf: true
+                        ]
                     },
                     count: 4
                 },
@@ -694,9 +674,7 @@ export default class GamePage extends Vue {
                         color: 0,
                         triggerNumbers: [
                             7
-                        ],
-                        canBeTriggeredByOthers: false,
-                        canBeTriggeredBySelf: true
+                        ]
                     },
                     count: 6
                 },
@@ -710,9 +688,7 @@ export default class GamePage extends Vue {
                         color: 0,
                         triggerNumbers: [
                             8
-                        ],
-                        canBeTriggeredByOthers: false,
-                        canBeTriggeredBySelf: true
+                        ]
                     },
                     count: 6
                 },
@@ -726,9 +702,7 @@ export default class GamePage extends Vue {
                         color: 1,
                         triggerNumbers: [
                             9
-                        ],
-                        canBeTriggeredByOthers: true,
-                        canBeTriggeredBySelf: true
+                        ]
                     },
                     count: 6
                 },
@@ -742,9 +716,7 @@ export default class GamePage extends Vue {
                         color: 1,
                         triggerNumbers: [
                             10
-                        ],
-                        canBeTriggeredByOthers: true,
-                        canBeTriggeredBySelf: true
+                        ]
                     },
                     count: 6
                 },
@@ -759,9 +731,7 @@ export default class GamePage extends Vue {
                         triggerNumbers: [
                             9,
                             10
-                        ],
-                        canBeTriggeredByOthers: true,
-                        canBeTriggeredBySelf: false
+                        ]
                     },
                     count: 6
                 },
@@ -776,9 +746,7 @@ export default class GamePage extends Vue {
                         triggerNumbers: [
                             11,
                             12
-                        ],
-                        canBeTriggeredByOthers: false,
-                        canBeTriggeredBySelf: true
+                        ]
                     },
                     count: 6
                 }
@@ -791,9 +759,7 @@ export default class GamePage extends Vue {
                     description: 'Můžete házet jednou nebo dvěma kostkami.',
                     symbol: 5,
                     color: 4,
-                    triggerNumbers: [],
-                    canBeTriggeredByOthers: false,
-                    canBeTriggeredBySelf: false
+                    triggerNumbers: []
                 },
                 {
                     cardName: 16,
@@ -802,9 +768,7 @@ export default class GamePage extends Vue {
                     description: 'Dostáváte-li příjmy za objekty Kafe nebo Toast, dostanete za každý z nich o 1 minci více.',
                     symbol: 5,
                     color: 4,
-                    triggerNumbers: [],
-                    canBeTriggeredByOthers: false,
-                    canBeTriggeredBySelf: false
+                    triggerNumbers: []
                 },
                 {
                     cardName: 17,
@@ -813,9 +777,7 @@ export default class GamePage extends Vue {
                     description: 'Pokud vám při hodu dvěma kostkami padnou stejná čísla, máte tah navíc.',
                     symbol: 5,
                     color: 4,
-                    triggerNumbers: [],
-                    canBeTriggeredByOthers: false,
-                    canBeTriggeredBySelf: false
+                    triggerNumbers: []
                 },
                 {
                     cardName: 18,
@@ -824,9 +786,7 @@ export default class GamePage extends Vue {
                     description: 'Jednou v každém tahu smíte znovu hodit kostkami.',
                     symbol: 5,
                     color: 4,
-                    triggerNumbers: [],
-                    canBeTriggeredByOthers: false,
-                    canBeTriggeredBySelf: false
+                    triggerNumbers: []
                 }
             ],
             bank: 204

@@ -46,7 +46,5 @@ export interface Card {
     color: CardColor;
     cost: number;
     description: string;
-    canBeTriggeredByOthers: boolean;
-    canBeTriggeredBySelf: boolean;
     bought?: boolean;
 }

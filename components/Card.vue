@@ -17,7 +17,7 @@
                     a-row.empty-space
                     a-row.text-center.bottom-row
                         a-col(span=6)
-                            a-row {{ info.card.canBeTriggeredByOthers ? 'ALL' : 'YOU' }}
+                            a-row {{ triggerType }}
                             a-row {{ info.card.cost }}
                         a-col(span=18)
                             a-row {{ info.card.description }}
@@ -31,7 +31,7 @@
 
 <script lang="ts">
 import 'reflect-metadata';
-import { Prop, Vue, Component } from 'vue-property-decorator';
+import { Component, Prop, Vue } from 'vue-property-decorator';
 import { CardColor } from '~/utils/cards';
 import { CardCount } from '~/utils/interfaces/events/game/input.interface';
 
@@ -79,6 +79,13 @@ export default class Card extends Vue {
             console.log('Card clicked');
             this.clickEvent(this.info.card.cardName);
         }
+    }
+
+    get triggerType (): string {
+        if (this.info.card.color === CardColor.Blue || this.info.card.color === CardColor.Red) {
+            return 'ALL';
+        }
+        return 'YOU';
     }
 }
 </script>
