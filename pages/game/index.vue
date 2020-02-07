@@ -2,7 +2,7 @@
     div
         a-col.game-container(span=18, offset=3)
             a-row(type="flex" justify="center")
-                logo
+                MachiKoroLogo
             a-row
                 h1 Game
                 a-row
@@ -57,6 +57,7 @@
 import { Component, Vue } from 'vue-property-decorator';
 import * as _ from 'lodash';
 import Logo from '~/components/Logo.vue';
+import MachiKoroLogo from '~/components/MachiKoroLogo.vue';
 import { events as eventConstants } from '~/utils/constants';
 import {
     AirportGain,
@@ -126,6 +127,7 @@ const dominants = [CardName.Station, CardName.ShoppingCenter, CardName.Amusement
 
 @Component({
     components: {
+        MachiKoroLogo,
         Logo,
         Card,
         PlayerCards
