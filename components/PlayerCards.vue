@@ -6,7 +6,7 @@
             p Money: {{ player.money }}
         a-row
             a-row(type="flex" justify="start" :gutter=16 v-for="(row, rowIndex) in playerCards" :key="rowIndex")
-                Card(v-for="(card, index) in row" :info="card" :key="index")
+                Card(v-for="(card, index) in row" :info="card" :key="index" :location="cardLocation.OtherPlayer")
 </template>
 
 <script lang="ts">
@@ -14,7 +14,7 @@ import 'reflect-metadata';
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import Card from './Card.vue';
 import { CardCount } from '~/utils/interfaces/events/game/input.interface';
-import { CardColor } from '~/utils/cards';
+import { CardColor, CardLocation } from '~/utils/cards';
 
 // TODO: duplicate in game/index.vue
 interface Player {
@@ -34,6 +34,8 @@ interface Player {
 })
 export default class PlayerCards extends Vue {
     @Prop() readonly player!: Player;
+
+    cardLocation = CardLocation;
 
     get playerCards (): CardCount[][] {
         const cards = [];

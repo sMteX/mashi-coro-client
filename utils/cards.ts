@@ -38,6 +38,12 @@ export enum CardName {
     Transmitter
 }
 
+export enum CardLocation {
+    Player,
+    OtherPlayer,
+    Table
+}
+
 export interface Card {
     cardName: CardName;
     name: string;
@@ -46,5 +52,5 @@ export interface Card {
     color: CardColor;
     cost: number;
     description: string;
-    bought?: boolean;
+    bought: boolean;
 }
