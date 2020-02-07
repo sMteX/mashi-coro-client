@@ -1,9 +1,9 @@
 <template lang="pug">
     a-row
         a-row
-            h3 {{ player.name }}
+            h2 {{ player.name }}
         a-row
-            p Money: {{ player.money }}
+            p Peníze: {{ player.money }}
         a-row
             a-row(type="flex" justify="start" :gutter=16 v-for="(row, rowIndex) in playerCards" :key="rowIndex")
                 Card(v-for="(card, index) in row" :info="card" :key="index" :location="cardLocation.OtherPlayer")
