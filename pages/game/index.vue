@@ -15,14 +15,12 @@
                         li(v-for="message in lastMessages") {{ message }}
                 a-row.game(v-if="loaded")
                     a-row
-                        h3 Turn phases
-                        div
-                            a-radio-group(:defaultValue="currentTurnPhase" button-style="solid")
-                                a-radio-button(v-for="(value, name, index) in turnPhases" :value="Number(name)" :key="index") {{ value }}
+                        h3 Turn phase: {{ turnPhases[currentTurnPhase] }}
+                        h3 Current player: {{ currentPlayer.name }}
                     a-row(v-if="isPlayerOnTurn")
                         h3 Actions
-                        a-button(v-for="(button, index) in buttons" :key="index" :disabled="!button.isActive" @click="button.handler") {{ button.text }}
-                    a-row
+                        a-button(v-for="(button, index) in buttons" :key="index" :disabled="!button.isActive()" @click="button.handler") {{ button.text }}
+                    a-row(v-if="currentTurnPhase >= 2")
                         h3 Dice
                         p Die #1: {{ dice.first }}
                         p(v-if="chosenAmountOfDice === 2") Die #2: {{ dice.second }}
@@ -37,7 +35,7 @@
                                 a-row
                                     // - dominants
                                     a-row(type="flex" justify="start" :gutter=16)
-                                        Card(v-for="(card, index) in playerCards(thisPlayer)[0]" :info="card" :key="index" :clickable="isCardClickable(card)")
+                                        Card(v-for="(card, index) in playerCards(thisPlayer)[0]" :info="card" :key="index" :clickable="isCardClickable(card)" :clickEvent="buyCard")
                                     // - normal cards
                                     a-row(type="flex" justify="start" :gutter=16 v-for="(row, rowIndex) in playerCards(thisPlayer).slice(1)" :key="rowIndex")
                                         Card(v-for="(card, index) in row" :info="card" :key="index")
@@ -119,9 +117,9 @@ interface Table {
 interface ActionButton {
     order: number;
     text: string;
-    isVisible: boolean;
+    isVisible: () => boolean;
     handler: () => void;
-    isActive: boolean;
+    isActive: () => boolean;
 }
 
 const dominants = [CardName.Station, CardName.ShoppingCenter, CardName.AmusementPark, CardName.Transmitter];
@@ -149,50 +147,7 @@ export default class GamePage extends Vue {
         [TurnPhase.EndTurn]: 'Konec tahu'
     };
 
-    private _buttons: ActionButton[] = [
-        {
-            order: 0,
-            text: 'Hod 1 kostkou',
-            isVisible: this.isRollOneDiceVisible,
-            handler: this.rollOneDice,
-            isActive: this.isRollOneDiceActive
-        },
-        {
-            order: 1,
-            text: 'Hod 2 kostkami',
-            isVisible: this.isRollTwoDiceVisible,
-            handler: this.rollTwoDice,
-            isActive: this.isRollTwoDiceActive
-        },
-        {
-            order: 2,
-            text: 'Nechat si kostky',
-            isVisible: this.isKeepDiceVisible,
-            handler: this.keepDice,
-            isActive: this.isKeepDiceActive
-        },
-        {
-            order: 3,
-            text: 'Hodit znovu',
-            isVisible: this.isRollAgainVisible,
-            handler: this.rollAgain,
-            isActive: this.isRollAgainActive
-        },
-        {
-            order: 4,
-            text: 'Přidat k hodu 2',
-            isVisible: this.isAddTwoToRollVisible,
-            handler: this.addTwoToRoll,
-            isActive: this.isAddTwoToRollActive
-        },
-        {
-            order: 5,
-            text: 'Ukončit tah',
-            isVisible: this.isEndTurnVisible,
-            handler: this.endTurn,
-            isActive: this.isEndTurnActive
-        }
-    ];
+    private _buttons: ActionButton[] = [];
 
     private currentTurnPhase: TurnPhase = TurnPhase.DiceChoice;
 
@@ -229,20 +184,19 @@ export default class GamePage extends Vue {
     }
 
     mounted () {
-        this.dummySetup = true;
+        // this.dummySetup = true;
         // without it is temporarily allowed through dummy data
-        this.useDummyData();
+        // this.useDummyData();
         // TODO: redirect if player didn't come from lobby (or maybe just don't use pages for this, but instead giant components that just get switched?)
-        // this.socket = io.connect(
-        //     `${process.env.serverUrl}/${events.namespaceName}`
-        // );
-        // this.setupHandlers();
-        // this.gameSlug = this.$route.query.id;
-        // this.socket.emit(events.output.PLAYER_CONNECT, {
-        //     game: this.gameSlug,
-        //     id: Number(this.$route.query.playerId)
-        // });
-        this.loaded = true;
+        this.socket = io.connect(
+            `${process.env.serverUrl}/${events.namespaceName}`
+        );
+        this.gameSlug = this.$route.query.id as string;
+        this.setupHandlers();
+        this.socket.emit(events.output.PLAYER_CONNECT, {
+            game: this.gameSlug,
+            id: Number(this.$route.query.playerId)
+        });
     }
 
     get isPlayerOnTurn (): boolean {
@@ -269,7 +223,7 @@ export default class GamePage extends Vue {
     // <editor-fold desc="Action buttons">
     // <editor-fold desc="button handlers">
     rollOneDice () {
-        this.log('1 dice rolled');
+        this.log(`1 dice rolled - player ${this.thisPlayer.id}`);
         if (!this.dummySetup) {
             this.chosenAmountOfDice = 1;
             this.currentTurnPhase = TurnPhase.DiceRoll;
@@ -401,7 +355,7 @@ export default class GamePage extends Vue {
 
     get buttons () {
         return this.$data._buttons
-            .filter((button: ActionButton) => button.isVisible)
+            .filter((button: ActionButton) => button.isVisible())
             .sort((a: ActionButton, b: ActionButton) => a.order - b.order);
     }
     // </editor-fold>
@@ -425,12 +379,12 @@ export default class GamePage extends Vue {
         const cards: CardCount[][] = [];
         cards.push([...player.winningCards]);
         cards.push([...player.cards.filter(({ card }) => card.color === CardColor.Red || card.color === CardColor.Blue)]);
-        cards.push([...player.cards.filter(({ card }) => card.color === CardColor.Green)]);
+        cards.push([...player.cards.filter(({ card }) => card.color === CardColor.Green || card.color === CardColor.Purple)]);
         return cards;
     }
 
     get lastMessages (): string[] {
-        return this.messages.slice(-3);
+        return this.messages.slice(-5);
     }
 
     log (message: string) {
@@ -447,6 +401,13 @@ export default class GamePage extends Vue {
             return this.players[0];
         }
         return this.findPlayer(this.socket.id);
+    }
+
+    get currentPlayer (): Player {
+        if (this.dummySetup) {
+            return this.players[0];
+        }
+        return this.findPlayer(this.activePlayerId);
     }
 
     get otherPlayers (): Player[] {
@@ -808,6 +769,8 @@ export default class GamePage extends Vue {
                 count: 1
             }))
         })));
+        this.loaded = true;
+        this.started = true;
     }
 
     setupHandlers () {
@@ -832,6 +795,50 @@ export default class GamePage extends Vue {
                     }))
                 })));
                 this.loaded = true;
+                this.$data._buttons = [
+                    {
+                        order: 0,
+                        text: 'Hod 1 kostkou',
+                        isVisible: () => this.isRollOneDiceVisible,
+                        handler: this.rollOneDice,
+                        isActive: () => this.isRollOneDiceActive
+                    },
+                    {
+                        order: 1,
+                        text: 'Hod 2 kostkami',
+                        isVisible: () => this.isRollTwoDiceVisible,
+                        handler: this.rollTwoDice,
+                        isActive: () => this.isRollTwoDiceActive
+                    },
+                    {
+                        order: 2,
+                        text: 'Nechat si kostky',
+                        isVisible: () => this.isKeepDiceVisible,
+                        handler: this.keepDice,
+                        isActive: () => this.isKeepDiceActive
+                    },
+                    {
+                        order: 3,
+                        text: 'Hodit znovu',
+                        isVisible: () => this.isRollAgainVisible,
+                        handler: this.rollAgain,
+                        isActive: () => this.isRollAgainActive
+                    },
+                    {
+                        order: 4,
+                        text: 'Přidat k hodu 2',
+                        isVisible: () => this.isAddTwoToRollVisible,
+                        handler: this.addTwoToRoll,
+                        isActive: () => this.isAddTwoToRollActive
+                    },
+                    {
+                        order: 5,
+                        text: 'Ukončit tah',
+                        isVisible: () => this.isEndTurnVisible,
+                        handler: this.endTurn,
+                        isActive: () => this.isEndTurnActive
+                    }
+                ];
             })
             .on(events.input.GAME_STARTING, () => {
                 this.log('Game starting now');
@@ -845,7 +852,7 @@ export default class GamePage extends Vue {
                 this.dice.second = second;
                 this.dice.sum = data.sum;
 
-                if (!this.playerHasCard(this.thisPlayer, CardName.Transmitter)) {
+                if (this.isPlayerOnTurn && !this.playerHasCard(this.thisPlayer, CardName.Transmitter)) {
                     // TODO: handle Port
                     this.socket.emit(events.output.END_ROLL, {
                         game: this.gameSlug,
@@ -862,32 +869,44 @@ export default class GamePage extends Vue {
                 this.currentTurnPhase = TurnPhase.RedCards;
             })
             .on(events.input.RED_CARD_EFFECTS, (data: RedCardEffects) => {
-                const gainStrings = Object.entries(data.gains).map(([id, gain]) => `Player ${id} gains ${gain} coins from player ${data.fromPlayer}.`);
-                const newMoneyStrings = Object.entries(data.newMoney).map(([id, money]) => {
-                    const p = this.findPlayer(id);
-                    p.money = money;
-                    return `Player ${id} now has ${money} coins.`;
+                const strings: string[] = [];
+                Object.entries(data.result).forEach(([id, result]) => {
+                    if (result.gains !== undefined && result.gains > 0) {
+                        // someone stole something from player, show
+                        strings.push(`Player ${id} gains ${result.gains} coins from player ${data.fromPlayer} and now has ${result.newMoney} coins. `);
+                    }
+                    const p = this.findPlayer(Number(id));
+                    p.money = result.newMoney;
                 });
-                this.log(gainStrings.join() + newMoneyStrings.join());
+                if (strings.length > 0) {
+                    this.log('RED CARDS: ' + strings.join());
+                }
                 this.currentTurnPhase = TurnPhase.BlueGreenCards;
             })
             .on(events.input.BLUE_CARD_EFFECTS, (data: BlueCardEffects) => {
-                const gainStrings = Object.entries(data.gains).map(([id, gain]) => `Player ${id} gains ${gain} coins.`);
-                const newMoneyStrings = Object.entries(data.newMoney).map(([id, money]) => {
-                    const p = this.findPlayer(id);
-                    p.money = money;
-                    return `Player ${id} now has ${money} coins.`;
+                const strings: string[] = [];
+                Object.entries(data.result).forEach(([id, result]) => {
+                    if (result.gains > 0) {
+                        // someone stole something from player, show
+                        strings.push(`Player ${id} gains ${result.gains} coins and now has ${result.newMoney} coins. `);
+                    }
+                    const p = this.findPlayer(Number(id));
+                    p.money = result.newMoney;
                 });
-                this.log(gainStrings.join() + newMoneyStrings.join());
+                if (strings.length > 0) {
+                    this.log(strings.join());
+                }
             })
             .on(events.input.GREEN_CARD_EFFECTS, (data: GreenCardEffects) => {
-                this.log(`Player ${data.player} gets ${data.gains} coins and now has ${data.newMoney} coins.`);
+                if (data.gains > 0) {
+                    this.log(`Player ${data.player} gets ${data.gains} coins and now has ${data.newMoney} coins.`);
+                }
                 const p = this.findPlayer(data.player);
                 p.money = data.newMoney;
                 this.currentTurnPhase = TurnPhase.PurpleCards;
             })
             .on(events.input.BUILDING_POSSIBLE, () => {
-                this.log('You can build now');
+                this.log(`You can build now - ${this.thisPlayer.id}`);
                 this.currentTurnPhase = TurnPhase.Build;
             })
             .on(events.input.PLAYER_BOUGHT_CARD, (data: PlayerBoughtCard) => {
@@ -924,7 +943,7 @@ export default class GamePage extends Vue {
                 this.players = this.players.filter(p => p.id !== playerId);
             })
             .on(events.input.PLAYER_WON_GAME, ({ playerId }: PlayerWonGame) => {
-                this.log(`Player ${playerId} has won the game.`);
+                alert(`Player ${playerId} has won the game.`);
                 // TODO: something
             });
     }

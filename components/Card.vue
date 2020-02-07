@@ -75,7 +75,7 @@ export default class Card extends Vue {
     };
 
     triggerClick () {
-        if (this.clickEvent) {
+        if (this.clickable && this.clickEvent) {
             console.log('Card clicked');
             this.clickEvent(this.info.card.cardName);
         }
@@ -106,6 +106,10 @@ $colors: (
     "winning-inactive-bg": #8a8a8a,
     "winning-active-bg": #fed233
 );
+
+.clickable {
+    cursor: pointer;
+}
 
 @each $class, $color in $colors {
     .#{$class} {

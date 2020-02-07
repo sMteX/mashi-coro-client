@@ -29,14 +29,20 @@ export interface DiceRollOutput {
 }
 export interface RedCardEffects {
     fromPlayer: number;
-    // TODO: playerId might turn into string during sending the events
-    gains: { [playerId: number]: number };
-    newMoney: { [playerId: number]: number };
+    result: {
+        [playerId: number]: {
+            gains?: number;
+            newMoney: number;
+        }
+    }
 }
 export interface BlueCardEffects {
-    // TODO: playerId might turn into string during sending the events
-    gains: { [playerId: number]: number };
-    newMoney: { [playerId: number]: number };
+    result: {
+        [playerId: number]: {
+            gains: number;
+            newMoney: number;
+        }
+    }
 }
 export interface GreenCardEffects {
     player: number;
