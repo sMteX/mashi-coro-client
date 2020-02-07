@@ -1,29 +1,63 @@
 <template lang="pug">
-    div.container
-        div
-            logo
-            div.links
-                a(href="#", class="button--grey" v-on:click="createGame") Create game
-                a(href="#", class="button--grey" v-on:click="joinGame") Join game
-                a(href="#" class="button--grey" v-on:click="confirmReady" v-if="isPlayable") Confirm ready check
-                a(href="#" class="button--grey" v-on:click="declineReady" v-if="isPlayable") Decline ready check
-                a(href="#" class="button--grey" v-on:click="simulateCloseTab" v-if="gameSlug !== ''") Simulate close tab
-                a(href="#" class="button--green" v-on:click="startGame" v-if="canStartGame") START THE GAME
-                a(href="#" class="button--grey" v-clipboard="() => gameSlug" v-if="isOwner") Copy game slug
-            div
-                h3 Players:
+    div
+        // - dialogs - ugly but works best
+        a-modal(:title="createNameDialog.title"
+            :visible="createNameDialog.visible"
+            okText="Potvrdit"
+            cancelText="Zrušit"
+            @ok="createNameDialogOk"
+            @cancel="hideDialog(createNameDialog)")
+            a-alert(v-if="createNameDialog.error" type="error" :message="createNameDialog.error" showIcon)
+            br
+            a-input(v-model="createNameDialog.temp")
+        a-modal(:title="joinNameDialog.title"
+            :visible="joinNameDialog.visible"
+            okText="Potvrdit"
+            cancelText="Zrušit"
+            @ok="joinNameDialogOk"
+            @cancel="hideDialog(joinNameDialog)")
+            a-alert(v-if="joinNameDialog.error" type="error" :message="joinNameDialog.error" showIcon)
+            br
+            a-input(v-model="joinNameDialog.temp")
+        a-modal(:title="gameDialog.title"
+            :visible="gameDialog.visible"
+            okText="Potvrdit"
+            cancelText="Zrušit"
+            @ok="gameDialogOk"
+            @cancel="hideDialog(gameDialog)")
+            a-alert(v-if="gameDialog.error" type="error" :message="gameDialog.error" showIcon)
+            br
+            a-input(v-model="gameDialog.temp")
+
+        a-col.game-container(span=14, offset=5)
+            a-row(type="flex" justify="center")
+                MachiKoroLogo
+            a-row.lobby
+                a-col(span=16 offset=4)
+                    a-row(type="flex" justify="space-around")
+                        a-button(size="large" @click="createGame" v-if="gameSlug === ''") Vytvořit hru
+                        a-button(size="large" @click="joinGame" v-if="gameSlug === ''") Přidat se do hry
+                        a-button(size="large" @click="confirmReady" v-if="isPlayable") Jsem připraven
+                        a-button(size="large" @click="declineReady" v-if="isPlayable" type="danger") Nejsem připraven
+                        a-button(size="large" @click="startGame" v-if="canStartGame" type="primary") Spustit hru
+                        a-button(size="large" @click="copySlug" v-if="isOwner") Zkopíruj kód hry
+            a-row(v-if="players.length > 0")
+                h3 Hráči:
                 ul
                     li(v-for="player in players")
-                        span(v-bind:style="{ color: (player.ready ? 'green': 'red')}") {{ player.name }}
-                        | - {{ player.id }}
-            div
+                        | {{ player.name }} -
+                        |
+                        span(v-if="player.ready" :style="{ color: 'green' }") připraven
+                        span(v-else :style="{ color: 'red' }") nepřipraven
+            a-row(v-if="messages.length > 0")
+                h3 Zprávy:
                 ul
                     li(v-for="message in messages") {{ message }}
 </template>
 
 <script lang="ts">
 import { Vue, Component } from 'vue-property-decorator';
-import Logo from '~/components/Logo.vue';
+import MachiKoroLogo from '~/components/MachiKoroLogo.vue';
 import { events as eventConstants } from '~/utils/constants';
 import {
     PlayerChangedReady,
@@ -38,10 +72,16 @@ interface PlayerPair {
     name: string;
     ready: boolean;
 }
-
+interface Dialog {
+    title: string;
+    temp: string;
+    visible: boolean;
+    result: string;
+    error: string;
+}
 @Component({
     components: {
-        Logo
+        MachiKoroLogo
     },
     head: {
         title: 'Lobby'
@@ -57,11 +97,116 @@ export default class LobbyPage extends Vue {
     private players: PlayerPair[] = [];
     private messages: string[] = [];
 
+    private createNameDialog: Dialog = {
+        title: 'Zadejte svoje jméno',
+        temp: '',
+        visible: false,
+        result: '',
+        error: ''
+    };
+
+    private gameDialog: Dialog = {
+        title: 'Zadejte kód hry',
+        temp: '',
+        visible: false,
+        result: '',
+        error: ''
+    };
+
+    private joinNameDialog: Dialog = {
+        title: 'Zadejte svoje jméno',
+        temp: '',
+        visible: false,
+        result: '',
+        error: ''
+    };
+
     mounted () {
         this.socket = io.connect(
             `${process.env.serverUrl}/${events.namespaceName}`
         );
         this.setupHandlers();
+    }
+
+    async createNameDialogOk () {
+        if (this.createNameDialog.temp.trim() === '') {
+            this.createNameDialog.error = 'Musíte si vybrat jméno.';
+            return;
+        }
+
+        this.createNameDialog.result = this.createNameDialog.temp;
+        this.hideDialog(this.createNameDialog);
+
+        this.gameSlug = await this.$axios.$post(
+            `${process.env.serverUrl}/api/createGame`
+        );
+
+        // this.log(`Game created - ${this.gameSlug}`);
+
+        this.socket.emit(events.output.PLAYER_ENTER, {
+            playerName: this.createNameDialog.result,
+            game: this.gameSlug
+        }, ({ id, name }: PlayerEnteredLobby) => {
+            this.selfId = id;
+            this.players.push({ id: this.selfId, name, ready: false });
+        });
+        this.isOwner = true;
+    }
+
+    async gameDialogOk () {
+        if (this.gameDialog.temp.trim() === '') {
+            this.gameDialog.error = 'Musíte zadat kód.';
+            return;
+        }
+        this.gameDialog.result = this.gameDialog.temp;
+
+        const validGame = await this.$axios.$post(`${process.env.serverUrl}/api/validateGame`, {
+            slug: this.gameDialog.result
+        });
+
+        if (!validGame) {
+            this.gameDialog.error = 'Nesprávný kód hry.';
+            return;
+        }
+
+        this.hideDialog(this.gameDialog);
+        this.showDialog(this.joinNameDialog);
+    }
+
+    joinNameDialogOk () {
+        if (this.joinNameDialog.temp.trim() === '') {
+            this.joinNameDialog.error = 'Musíte si vybrat jméno.';
+            return;
+        }
+        this.joinNameDialog.result = this.joinNameDialog.temp;
+        this.hideDialog(this.joinNameDialog);
+
+        this.gameSlug = this.gameDialog.result;
+        this.socket.emit(events.output.PLAYER_ENTER, {
+            playerName: this.joinNameDialog.result,
+            game: this.gameSlug
+        }, ({ id }: PlayerEnteredLobby) => this.selfId = id);
+        this.socket.emit(events.output.GET_PLAYERS, {
+            game: this.gameSlug
+        }, (players: PlayerPair[]) => {
+            this.players = [...players];
+        });
+    }
+
+    copySlug () {
+        // @ts-ignore
+        this.$clipboard(this.gameSlug);
+        this.$message.success('Odkaz na hru zkopírován do schránky');
+    }
+
+    showDialog (dialog: Dialog) {
+        dialog.visible = true;
+    }
+
+    hideDialog (dialog: Dialog) {
+        dialog.temp = '';
+        dialog.error = '';
+        dialog.visible = false;
     }
 
     log (message: string) {
@@ -85,56 +230,15 @@ export default class LobbyPage extends Vue {
         return this.isOwner && this.players.every(p => p.ready);
     }
 
-    async createGame () {
-        // TODO: step 1: API POST to server/api/createGame
-        this.gameSlug = await this.$axios.$post(
-            `${process.env.serverUrl}/api/createGame`
-        );
-        this.log(`Game created - ${this.gameSlug}`);
-        const name = 'Chizu';
-        // TODO: step 3: open connection to lobby?
-        this.socket.emit(events.output.PLAYER_ENTER, {
-            playerName: name,
-            game: this.gameSlug
-        }, (id: number) => {
-            this.selfId = id;
-            this.players.push({ id: this.selfId, name, ready: false });
-        });
-        this.isOwner = true;
+    createGame () {
+        this.showDialog(this.createNameDialog);
     }
 
-    async joinGame () {
-        let slug = null;
-        while (slug === null) {
-            slug = prompt('Enter the game slug');
-        }
-
-        // TODO: step 4: simulate other players entering the game - POST to server/api/validateGame
-        const validGame = await this.$axios.$post(`${process.env.serverUrl}/api/validateGame`, {
-            slug
-        });
-
-        if (!validGame) {
-            this.log('Invalid slug');
-            return;
-        }
-
-        this.gameSlug = slug;
-        const name = prompt('Enter your name');
-        this.log('Joined game');
-        this.socket.emit(events.output.PLAYER_ENTER, {
-            playerName: name,
-            game: this.gameSlug
-        }, (id: number) => this.selfId = id);
-        this.socket.emit(events.output.GET_PLAYERS, {
-            game: this.gameSlug
-        }, (players: PlayerPair[]) => {
-            this.players = [...players];
-        });
+    joinGame () {
+        this.showDialog(this.gameDialog);
     }
 
     confirmReady () {
-        // TODO: emit confirm ready check
         this.socket.emit(events.output.PLAYER_READY_STATUS, {
             ready: true,
             game: this.gameSlug
@@ -143,7 +247,6 @@ export default class LobbyPage extends Vue {
     }
 
     declineReady () {
-        // TODO: emit decline ready check
         this.socket.emit(events.output.PLAYER_READY_STATUS, {
             ready: false,
             game: this.gameSlug
@@ -170,26 +273,30 @@ export default class LobbyPage extends Vue {
     setupHandlers () {
         this.socket
             .on(events.input.PLAYER_ENTERED_LOBBY, (player: PlayerEnteredLobby) => {
-                this.log(`New player entered the game: ${player.name} - id: ${player.id}`);
+                this.log(`Nový hráč se přidal do hry: ${player.name}.`);
                 this.players.push({ id: player.id, name: player.name, ready: false });
             })
             .on(events.input.GAME_PLAYABLE, () => {
                 // TODO: step 6: when game is playable, react somehow
-                this.log('Game is playable now');
+                this.log('Hra se nyní dá spustit.');
                 this.isPlayable = true;
             })
             .on(events.input.ALL_READY, () => {
-                this.log('All players ready');
+                this.log('Všichni hráči jsou připraveni.');
             })
             .on(events.input.PLAYER_CHANGED_READY_STATUS, (event: PlayerChangedReady) => {
                 // TODO: handle when another player confirms/cancels ready check
                 const player = this.findPlayer(event.id);
                 player.ready = event.newStatus;
-                this.log(`Player ${player.name} changed ready status to ${player.ready}`);
+                if (player.ready) {
+                    this.log(`Hráč ${player.name} je nyní připraven.`);
+                } else {
+                    this.log(`Hráč ${player.name} už není připraven.`);
+                }
             })
             .on(events.input.PLAYER_LEFT_LOBBY, (player: PlayerLeftLobby) => {
                 const name = this.findPlayer(player.id).name;
-                this.log(`Player ${name} left the lobby`);
+                this.log(`Hráč ${name} opustil hru.`);
                 this.players = this.players.filter(p => p.id !== player.id);
                 if (this.players.length === 1) {
                     this.isPlayable = false;
@@ -209,6 +316,13 @@ export default class LobbyPage extends Vue {
 </script>
 
 <style lang="scss">
+.game-container {
+    margin-top: 10px;
+    margin-bottom: 50px;
+}
+.lobby {
+    margin-top: 20px;
+}
 .container {
     margin: 0 auto;
     min-height: 100vh;
