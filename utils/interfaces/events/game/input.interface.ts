@@ -5,19 +5,23 @@ export interface CardCount {
     card: Card;
     count: number;
 }
-
+interface CardPairInput {
+    card: CardName;
+    count: number;
+}
 interface GameStartingPlayer {
     id: number;
     socketId: string;
     name: string;
-    cards: CardCount[];
+    cards: CardPairInput[];
     money: number;
 }
 // event interfaces
 export interface GameDataLoad {
     players: GameStartingPlayer[];
-    buyableCards: CardCount[];
-    winningCards: Card[];
+    cardDb: {[name in CardName]: Omit<Card, 'bought'>};
+    buyableCards: CardPairInput[];
+    winningCards: CardName[];
     bank: number;
     startingPlayerId: number;
 }
