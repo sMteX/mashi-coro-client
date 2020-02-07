@@ -14,6 +14,7 @@ import 'reflect-metadata';
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import Card from './Card.vue';
 import { CardCount } from '~/utils/interfaces/events/game/input.interface';
+import { CardColor } from '~/utils/cards';
 
 // TODO: duplicate in game/index.vue
 interface Player {
@@ -37,8 +38,8 @@ export default class PlayerCards extends Vue {
     get playerCards (): CardCount[][] {
         const cards = [];
         cards.push([...this.player.winningCards]);
-        cards.push([...this.player.cards.filter(({ card }) => card.canBeTriggeredByOthers)]);
-        cards.push([...this.player.cards.filter(({ card }) => !card.canBeTriggeredByOthers)]);
+        cards.push([...this.player.cards.filter(({ card }) => card.color === CardColor.Red || card.color === CardColor.Blue)]);
+        cards.push([...this.player.cards.filter(({ card }) => card.color === CardColor.Green || card.color === CardColor.Purple)]);
         return cards;
     }
 }
