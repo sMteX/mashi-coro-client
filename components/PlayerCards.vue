@@ -38,10 +38,11 @@ export default class PlayerCards extends Vue {
     cardLocation = CardLocation;
 
     get playerCards (): CardCount[][] {
+        const avg = (dice: number[]) => (dice.reduce((acc, cur) => acc + cur, 0) / (dice.length || 1));
         const cards = [];
         cards.push([...this.player.winningCards]);
-        cards.push([...this.player.cards.filter(({ card }) => card.color === CardColor.Red || card.color === CardColor.Blue)]);
-        cards.push([...this.player.cards.filter(({ card }) => card.color === CardColor.Green || card.color === CardColor.Purple)]);
+        cards.push([...this.player.cards.filter(({ card }) => card.color === CardColor.Red || card.color === CardColor.Blue).sort((a, b) => avg(a.card.triggerNumbers) - avg(b.card.triggerNumbers))]);
+        cards.push([...this.player.cards.filter(({ card }) => card.color === CardColor.Green || card.color === CardColor.Purple).sort((a, b) => avg(a.card.triggerNumbers) - avg(b.card.triggerNumbers))]);
         return cards;
     }
 }

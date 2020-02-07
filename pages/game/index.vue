@@ -372,15 +372,19 @@ export default class GamePage extends Vue {
         return player.cards.filter(cc => cc.card.cardName === card).length > 0;
     }
 
+    private avg (dice: number[]): number {
+        return dice.reduce((acc, cur) => acc + cur, 0) / (dice.length || 1);
+    }
+
     get buyableCardsTable (): CardCount[][] {
-        return _.chunk(this.table.buyableCards, 5);
+        return _.chunk(this.table.buyableCards.sort((a, b) => this.avg(a.card.triggerNumbers) - this.avg(b.card.triggerNumbers)), 5);
     }
 
     playerCards (player: Player): CardCount[][] {
         const cards: CardCount[][] = [];
         cards.push([...player.winningCards]);
-        cards.push([...player.cards.filter(({ card }) => card.color === CardColor.Red || card.color === CardColor.Blue)]);
-        cards.push([...player.cards.filter(({ card }) => card.color === CardColor.Green || card.color === CardColor.Purple)]);
+        cards.push([...player.cards.filter(({ card }) => card.color === CardColor.Red || card.color === CardColor.Blue).sort((a, b) => this.avg(a.card.triggerNumbers) - this.avg(b.card.triggerNumbers))]);
+        cards.push([...player.cards.filter(({ card }) => card.color === CardColor.Green || card.color === CardColor.Purple).sort((a, b) => this.avg(a.card.triggerNumbers) - this.avg(b.card.triggerNumbers))]);
         return cards;
     }
 
