@@ -24,7 +24,7 @@
                             a-row {{ triggerType }}
                             a-row {{ info.card.cost }}
                         a-col(span=18)
-                            a-row {{ info.card.description }}
+                            a-row {{ info.card.description }} {{ symbol2 }}
         // - miniature
         div.card-stack
             div(v-for="index in info.count-1" :class="`card_${index}`" :key="index")
@@ -103,6 +103,15 @@ export default class Card extends Vue {
             return (this.info.card.bought) ? cssBackgrounds.winningActive : cssBackgrounds.winningInactive;
         }
         return this.cardBackgroundMap[this.info.card.color];
+    }
+
+    get symbol2 (): Vue.VNode {
+        return this.$createElement('div', { style: { 'background-color': '#f00' } }, ['Hello']);
+        // return this.$createElement(CardSymbol, {
+        //     props: {
+        //         card: this.info.card
+        //     }
+        // });
     }
 }
 </script>
