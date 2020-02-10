@@ -615,7 +615,7 @@ export default class GamePage extends Vue {
                     name: 'Obchodní dům',
                     cost: 2,
                     description: 'Za každý svůj objekt Obilí si vezměte 2 mince z banku',
-                    symbol: 7,
+                    symbol: 8,
                     color: 0,
                     triggerNumbers: [
                         11,

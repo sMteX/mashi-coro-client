@@ -4,7 +4,9 @@
             // - dominant closeup
             div.card(v-if="info.card.color === cardColor.Dominant")
                 div.inner(:class="backgroundClass")
-                    a-row.name(type="flex" justify="center") {{ info.card.name }}
+                    a-row.name(type="flex" justify="center")
+                        CardSymbol(:card="info.card")
+                        | {{ info.card.name }}
                     a-row.empty-space
                     a-row.text-center.bottom-row(type="flex" align="middle")
                         a-col(span=6) {{ info.card.cost }}
@@ -13,7 +15,9 @@
             div.card(v-else)
                 div.inner(:class="backgroundClass")
                     a-row(type="flex" justify="center") {{ info.card.triggerNumbers.join(',') }}
-                    a-row.name(type="flex" justify="center") {{ info.card.symbol }} {{ info.card.name }}
+                    a-row.name(type="flex" justify="center")
+                        CardSymbol(:card="info.card")
+                        | {{ info.card.name }}
                     a-row.empty-space
                     a-row.text-center.bottom-row
                         a-col(span=6)
@@ -36,6 +40,7 @@ import 'reflect-metadata';
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { CardColor, CardLocation } from '~/utils/cards';
 import { CardCount } from '~/utils/interfaces/events/game/input.interface';
+import CardSymbol from '~/components/CardSymbol.vue';
 
 const cssBackgrounds = {
     green: 'green-bg',
@@ -48,6 +53,7 @@ const cssBackgrounds = {
 
 @Component({
     components: {
+        CardSymbol
     },
     props: {
         // clickable: {
