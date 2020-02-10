@@ -22,7 +22,9 @@
                     a-row.empty-space
                     a-row.text-center.bottom-row
                         a-col(span=6)
-                            a-row {{ triggerType }}
+                            a-row
+                                img(v-if="triggeredByAll" src="@/assets/icons/multi_player.svg" width="30" height="30")
+                                img(v-else src="@/assets/icons/single_player.svg" width="15" height="30")
                             a-row {{ info.card.cost }}
                         a-col(span=18)
                             a-row
@@ -58,18 +60,6 @@ const cssBackgrounds = {
     components: {
         CardDescription,
         CardSymbol
-    },
-    props: {
-        // clickable: {
-        //     required: false,
-        //     default: false,
-        //     type: Boolean
-        // },
-        // clickEvent: {
-        //     type: Function,
-        //     required: false
-        // },
-        // info: Object
     }
 })
 export default class Card extends Vue {
@@ -90,16 +80,12 @@ export default class Card extends Vue {
 
     triggerClick () {
         if (this.clickable && this.clickEvent) {
-            console.log('Card clicked');
             this.clickEvent(this.info.card.cardName);
         }
     }
 
-    get triggerType (): string {
-        if (this.info.card.color === CardColor.Blue || this.info.card.color === CardColor.Red) {
-            return 'ALL';
-        }
-        return 'YOU';
+    get triggeredByAll (): boolean {
+        return this.info.card.color === CardColor.Blue || this.info.card.color === CardColor.Red;
     }
 
     get backgroundClass (): string {
@@ -107,15 +93,6 @@ export default class Card extends Vue {
             return (this.info.card.bought) ? cssBackgrounds.winningActive : cssBackgrounds.winningInactive;
         }
         return this.cardBackgroundMap[this.info.card.color];
-    }
-
-    get symbol2 (): Vue.VNode {
-        return this.$createElement('div', { style: { 'background-color': '#f00' } }, ['Hello']);
-        // return this.$createElement(CardSymbol, {
-        //     props: {
-        //         card: this.info.card
-        //     }
-        // });
     }
 }
 </script>
