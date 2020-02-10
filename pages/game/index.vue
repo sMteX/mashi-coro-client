@@ -83,7 +83,7 @@ import {
 } from '~/utils/interfaces/events/game/input.interface';
 import PlayerCards from '~/components/PlayerCards.vue';
 import Card from '~/components/Card.vue';
-import { CardColor, CardName, CardLocation, Card as CardInterface } from '~/utils/cards';
+import { CardColor, CardName, CardLocation, Card as CardInterface, CardSymbol } from '~/utils/cards';
 
 const io = require('socket.io-client');
 const { game: events } = eventConstants;
@@ -547,7 +547,7 @@ export default class GamePage extends Vue {
                     cardName: 8,
                     name: 'Kancelářská budova',
                     cost: 8,
-                    description: 'Můžete vyměnit jednu svoji kartu objektu za soupeřovu (nelze měnit Věže)',
+                    description: `Můžete vyměnit jednu svoji kartu objektu za soupeřovu (nelze měnit #SYMBOL_${CardSymbol.Tower})`,
                     symbol: 5,
                     color: 3,
                     triggerNumbers: [
@@ -558,7 +558,7 @@ export default class GamePage extends Vue {
                     cardName: 9,
                     name: 'Mlékárna',
                     cost: 5,
-                    description: 'Za každý svůj objekt Prase si vezměte 3 mince z banku',
+                    description: `Za každý svůj objekt #SYMBOL_${CardSymbol.Pig} si vezměte 3 mince z banku.`,
                     symbol: 6,
                     color: 0,
                     triggerNumbers: [
@@ -569,7 +569,7 @@ export default class GamePage extends Vue {
                     cardName: 10,
                     name: 'Továrna na nábytek',
                     cost: 3,
-                    description: 'Za každý svůj objekt Kolečko si vezměte 3 mince z banku',
+                    description: `Za každý svůj objekt #SYMBOL_${CardSymbol.Cog} si vezměte 3 mince z banku`,
                     symbol: 6,
                     color: 0,
                     triggerNumbers: [
@@ -614,7 +614,7 @@ export default class GamePage extends Vue {
                     cardName: 14,
                     name: 'Obchodní dům',
                     cost: 2,
-                    description: 'Za každý svůj objekt Obilí si vezměte 2 mince z banku',
+                    description: `Za každý svůj objekt #SYMBOL_${CardSymbol.Wheat} si vezměte 2 mince z banku`,
                     symbol: 8,
                     color: 0,
                     triggerNumbers: [
@@ -635,7 +635,7 @@ export default class GamePage extends Vue {
                     cardName: 16,
                     name: 'Nákupní centrum',
                     cost: 10,
-                    description: 'Dostáváte-li příjmy za objekty Kafe nebo Toast, dostanete za každý z nich o 1 minci více.',
+                    description: `Dostáváte-li příjmy za objekty #SYMBOL_${CardSymbol.Coffee} nebo #SYMBOL_${CardSymbol.Box}, dostanete za každý z nich o 1 minci více.`,
                     symbol: 5,
                     color: 4,
                     triggerNumbers: []

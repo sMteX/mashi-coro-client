@@ -5,18 +5,19 @@
             div.card(v-if="info.card.color === cardColor.Dominant")
                 div.inner(:class="backgroundClass")
                     a-row.name(type="flex" justify="center")
-                        CardSymbol(:card="info.card")
+                        CardSymbol(:symbol="info.card.symbol" :color="info.card.color" :bought="info.card.bought")
                         | {{ info.card.name }}
                     a-row.empty-space
                     a-row.text-center.bottom-row(type="flex" align="middle")
                         a-col(span=6) {{ info.card.cost }}
-                        a-col(span=18) {{ info.card.description }}
+                        a-col(span=18)
+                            CardDescription(:text="info.card.description")
             // - closeup
             div.card(v-else)
                 div.inner(:class="backgroundClass")
-                    a-row(type="flex" justify="center") {{ info.card.triggerNumbers.join(',') }}
+                    a-row(type="flex" justify="center") {{ info.card.triggerNumbers.join(', ') }}
                     a-row.name(type="flex" justify="center")
-                        CardSymbol(:card="info.card")
+                        CardSymbol(:symbol="info.card.symbol" :color="info.card.color")
                         | {{ info.card.name }}
                     a-row.empty-space
                     a-row.text-center.bottom-row
@@ -24,13 +25,14 @@
                             a-row {{ triggerType }}
                             a-row {{ info.card.cost }}
                         a-col(span=18)
-                            a-row {{ info.card.description }} {{ symbol2 }}
+                            a-row
+                                CardDescription(:text="info.card.description")
         // - miniature
         div.card-stack
             div(v-for="index in info.count-1" :class="`card_${index}`" :key="index")
             div.card-miniature(:class="{ clickable }" @click="triggerClick")
                 a-row.inner(type="flex" justify="center" align="middle" :class="backgroundClass")
-                    div.text-center(v-if="info.card.color !== 4") {{ info.card.triggerNumbers.join(',') }}
+                    div.text-center(v-if="info.card.color !== 4") {{ info.card.triggerNumbers.join(', ') }}
                     div.miniature-name.text-center {{ info.card.name }}
                     div.text-center(v-if="location !== cardLocation.OtherPlayer && !info.card.bought") {{ info.card.cost }}
 </template>
@@ -41,6 +43,7 @@ import { Component, Prop, Vue } from 'vue-property-decorator';
 import { CardColor, CardLocation } from '~/utils/cards';
 import { CardCount } from '~/utils/interfaces/events/game/input.interface';
 import CardSymbol from '~/components/CardSymbol.vue';
+import CardDescription from '~/components/CardDescription.vue';
 
 const cssBackgrounds = {
     green: 'green-bg',
@@ -53,6 +56,7 @@ const cssBackgrounds = {
 
 @Component({
     components: {
+        CardDescription,
         CardSymbol
     },
     props: {
