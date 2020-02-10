@@ -1,22 +1,15 @@
-import { CardSymbol } from '~/utils/cards';
 <script lang="ts">
+import { Vue, Component, Prop } from 'vue-property-decorator';
 import { CardColor, CardSymbol as SymbolEnum } from '~/utils/cards';
 import CardSymbol from '~/components/CardSymbol.vue';
 
-export default {
-    name: 'CardDescription',
-    props: {
-        text: {
-            type: String,
-            required: true
-        }
-    },
-    // eslint-disable-next-line object-shorthand
-    render: function (createElement: Vue.CreateElement) {
+@Component
+export default class CardDescription extends Vue {
+    @Prop() readonly text!: string;
+
+    render (createElement: Vue.CreateElement) {
         const regex = /#SYMBOL_(\d+)/g;
-        // @ts-ignore
-        const text: string = this.text;
-        const result: (string|Vue.VNode)[] = text.split(regex)
+        const result: (string|Vue.VNode)[] = this.text.split(regex)
             .filter(s => s.trim() !== '')
             .map((s: string) => {
                 const ns = Number(s);
@@ -37,5 +30,5 @@ export default {
             });
         return createElement('span', [...result]);
     }
-};
+}
 </script>
