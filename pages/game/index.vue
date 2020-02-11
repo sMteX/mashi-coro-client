@@ -76,6 +76,7 @@ import {
     GameDataLoad,
     GreenCardEffects,
     NewTurn,
+    PassivePurpleCardEffects,
     PlayerBoughtCard,
     PlayerLeftGame,
     PlayerWonGame,
@@ -83,7 +84,7 @@ import {
 } from '~/utils/interfaces/events/game/input.interface';
 import PlayerCards from '~/components/PlayerCards.vue';
 import Card from '~/components/Card.vue';
-import { CardColor, CardName, CardLocation, Card as CardInterface, CardSymbol } from '~/utils/cards';
+import { Card as CardInterface, CardColor, CardLocation, CardName, CardSymbol } from '~/utils/cards';
 
 const io = require('socket.io-client');
 const { game: events } = eventConstants;
@@ -229,7 +230,12 @@ export default class GamePage extends Vue {
     }
 
     isCardClickable ({ card }: CardCount): boolean {
+        let purpleCheck = true;
+        if (card.color === CardColor.Purple) {
+            purpleCheck = !this.playerHasCard(this.thisPlayer, card.cardName);
+        }
         return this.isPlayerOnTurn &&
+                purpleCheck &&
                 this.currentTurnPhase === TurnPhase.Build &&
                 !this.alreadyBought &&
                 this.thisPlayer.money >= card.cost;
@@ -297,6 +303,7 @@ export default class GamePage extends Vue {
     endTurn () {
         this.log('Tah ukončen.');
         if (!this.dummySetup) {
+            // TODO: check for IT Center if player has it and has money (just a simple confirm - do you want to add a coin to this card before ending turn?)
             this.socket.emit(events.output.END_TURN, {
                 game: this.gameSlug,
                 playerId: this.thisPlayer.id
@@ -889,6 +896,56 @@ export default class GamePage extends Vue {
                 const p = this.findPlayer(data.player);
                 p.money = data.newMoney;
                 this.currentTurnPhase = TurnPhase.PurpleCards;
+
+                /* serverside: after green cards are done, check if player has some purple cards that NEED user input (and are actually triggered)
+                        exactly 50:50, 4 cards active, 4 cards passive
+                        active: Office Building, Water Treatment Plant, TV Studio, IT Center
+                        passive: Stadium, Financial Office, Park, Publishing House
+
+                    after looking at the cards - if passive and active cards are activated (6 and 8 rolls), doesn't matter in which order they're activated
+                    so just check for passive purple cards, trigger them if possible, then check for active cards, and possibly wait for player action
+                */
+            })
+            .on(events.input.PASSIVE_PURPLE_CARD_EFFECTS, (data: PassivePurpleCardEffects) => {
+                Object.entries(data.result).forEach(([id, result]) => {
+                    if (result.gains !== undefined && result.gains > 0) {
+                        // someone stole something from player, show
+                        this.log(`Fialové karty: ${this.playerName(data.player)} získává ${result.gains} mincí od ostatních hráčů a má nyní ${result.newMoney} mincí.`, true);
+                    }
+                    const p = this.findPlayer(Number(id));
+                    p.money = result.newMoney;
+                });
+                // still purple cards
+            })
+            .on(events.input.ACTIVE_PURPLE_CARD_WAIT, () => {
+                // TODO: check all TRIGGERED active purple cards, gather inputs, send to server (at once so we can send the response once too)
+                //  pretty much just roll=6 can mean multiple cards, other than that it's single cards, might be easier to implement to do just manual "has card" check instead of iterating, filtering..
+
+                // this will be on component level (so dialogs and their callbacks can access it)
+                // object, property keys are card names (enum), value is pretty much any type, server will handle
+                const results: { [card in CardName]?: any } = {};
+                if (this.dice.sum === 6) {
+                    if (this.playerHasCard(this.thisPlayer, CardName.TelevisionStudio)) {
+                        // TODO: show some kind of "choose a player" dialogue - possibly with listed amount of money
+                    }
+                    if (this.playerHasCard(this.thisPlayer, CardName.OfficeBuilding)) {
+                        // TODO: 1) ask a player if he wants to use this card
+                        //  2) if yes:
+                        //  3) pick a player
+                        //  4) pick his card
+                        //  5) pick your card
+                    }
+                }
+                // TODO: add other cards - IT Center (10), Waste Water Plant (8)
+                // technically, IT Center isn't handled here, and part of it is passive and part of it is processed at end of turn, so just Waste Water Plant
+                if (Object.keys(results).length > 0) {
+                    // we can choose to NOT trigger Office Building, leaving results empty (with no properties = keys)
+                    this.socket.emit(events.output.ACTIVE_PURPLE_CARDS_INPUT, {
+                        game: this.gameSlug,
+                        playerId: this.thisPlayer.id,
+                        inputs: results
+                    });
+                }
             })
             .on(events.input.BUILDING_POSSIBLE, () => {
                 this.log('Nyní můžete stavět.', true);

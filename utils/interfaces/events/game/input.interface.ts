@@ -53,6 +53,15 @@ export interface GreenCardEffects {
     newMoney: number;
     gains: number;
 }
+export interface PassivePurpleCardEffects {
+    player: number;
+    result: {
+        [playerId: number]: {
+            gains?: number;
+            newMoney: number;
+        }
+    }
+}
 export interface PlayerBoughtCard {
     player: number;
     card: CardName;
