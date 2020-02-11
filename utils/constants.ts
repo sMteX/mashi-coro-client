@@ -29,6 +29,7 @@ export const events = {
             GREEN_CARD_EFFECTS: 'greenCardEffects',
             PASSIVE_PURPLE_CARD_EFFECTS: 'passivePurpleCardEffects',
             ACTIVE_PURPLE_CARD_WAIT: 'activePurpleCardWait',
+            ACTIVE_PURPLE_CARD_RESULT: 'activePurpleCardResult',
             BUILDING_POSSIBLE: 'buildingPossible',
             PLAYER_BOUGHT_CARD: 'playerBoughtCard',
             AIRPORT_GAIN: 'airportGain',

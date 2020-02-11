@@ -68,6 +68,7 @@ import Logo from '~/components/Logo.vue';
 import MachiKoroLogo from '~/components/MachiKoroLogo.vue';
 import { events as eventConstants } from '~/utils/constants';
 import {
+    ActivePurpleCardEffects,
     AirportGain,
     AmusementParkNewTurn,
     BlueCardEffects,
@@ -75,12 +76,12 @@ import {
     DiceRollOutput,
     GameDataLoad,
     GreenCardEffects,
-    NewTurn,
+    NewTurn, OfficeBuildingEffect,
     PassivePurpleCardEffects,
     PlayerBoughtCard,
     PlayerLeftGame,
     PlayerWonGame,
-    RedCardEffects
+    RedCardEffects, StadiumEffect
 } from '~/utils/interfaces/events/game/input.interface';
 import PlayerCards from '~/components/PlayerCards.vue';
 import Card from '~/components/Card.vue';
@@ -946,6 +947,26 @@ export default class GamePage extends Vue {
                         inputs: results
                     });
                 }
+            })
+            .on(events.input.ACTIVE_PURPLE_CARD_RESULT, (data: ActivePurpleCardEffects) => {
+                Object.entries(data.results).forEach(([cardName, result]) => {
+                    const cardEnum = Number(cardName) as CardName;
+                    if (cardEnum === CardName.OfficeBuilding) {
+                        const typedResult = result as OfficeBuildingEffect;
+                        // remove card from player, add to target player and vice versa
+                        // const targetPlayer = handler.getPlayer(args.targetPlayerId);
+                        // owner.removeCard(args.swapCardOwn);
+                        // targetPlayer.addCard(args.swapCardOwn);
+                        //
+                        // targetPlayer.removeCard(args.swapCardTarget);
+                        // owner.addCard(args.swapCardTarget);
+                    } else if (cardEnum === CardName.Stadium) {
+                        const typedResult = result as StadiumEffect;
+                        this.findPlayer(typedResult.currentPlayerId).money = typedResult.currentPlayerMoney;
+                        this.findPlayer(typedResult.targetPlayerId).money = typedResult.targetPlayerMoney;
+                        this.log(`${this.playerName(typedResult.currentPlayerId)} získává ${typedResult.gain} mincí od ${this.playerName(typedResult.targetPlayerId)} a má nyní ${typedResult.currentPlayerMoney} mincí.`, true);
+                    }
+                });
             })
             .on(events.input.BUILDING_POSSIBLE, () => {
                 this.log('Nyní můžete stavět.', true);

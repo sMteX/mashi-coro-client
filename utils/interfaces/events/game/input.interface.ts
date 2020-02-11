@@ -62,6 +62,24 @@ export interface PassivePurpleCardEffects {
         }
     }
 }
+export interface ActivePurpleCardEffects {
+    results: { [card in CardName]?: any; }
+}
+// subtypes for ActivePurpleCardEffects
+export interface OfficeBuildingEffect {
+    currentPlayerId: number;
+    targetPlayerId: number;
+    swapCardOwn: CardName;
+    swapCardTarget: CardName;
+}
+export interface StadiumEffect {
+    currentPlayerId: number;
+    targetPlayerId: number;
+    currentPlayerMoney: number;
+    targetPlayerMoney: number;
+    gain: number;
+}
+// TODO: Water Treatment Effects
 export interface PlayerBoughtCard {
     player: number;
     card: CardName;
