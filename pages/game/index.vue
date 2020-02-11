@@ -954,12 +954,15 @@ export default class GamePage extends Vue {
                     if (cardEnum === CardName.OfficeBuilding) {
                         const typedResult = result as OfficeBuildingEffect;
                         // remove card from player, add to target player and vice versa
-                        // const targetPlayer = handler.getPlayer(args.targetPlayerId);
-                        // owner.removeCard(args.swapCardOwn);
-                        // targetPlayer.addCard(args.swapCardOwn);
-                        //
-                        // targetPlayer.removeCard(args.swapCardTarget);
-                        // owner.addCard(args.swapCardTarget);
+                        const sourcePlayer = this.findPlayer(typedResult.currentPlayerId);
+                        const targetPlayer = this.findPlayer(typedResult.targetPlayerId);
+
+                        this.removeCardFromPlayer(sourcePlayer, typedResult.swapCardOwn);
+                        this.addCardToPlayer(targetPlayer, typedResult.swapCardOwn, false);
+
+                        this.removeCardFromPlayer(targetPlayer, typedResult.swapCardTarget);
+                        this.addCardToPlayer(sourcePlayer, typedResult.swapCardTarget, false);
+                        this.log(`${sourcePlayer.name} vyměnil svoji kartu ${this.cardName(typedResult.swapCardOwn)} za ${this.cardName(typedResult.swapCardTarget)} od ${targetPlayer.name}.`, true);
                     } else if (cardEnum === CardName.Stadium) {
                         const typedResult = result as StadiumEffect;
                         this.findPlayer(typedResult.currentPlayerId).money = typedResult.currentPlayerMoney;
@@ -976,7 +979,7 @@ export default class GamePage extends Vue {
                 this.log(`${this.playerName(data.player)} si koupil kartu ${this.cardName(data.card)}.`, true);
 
                 const player = this.findPlayer(data.player);
-                this.addCardToPlayer(player, data.card);
+                this.addCardToPlayer(player, data.card, true);
 
                 // remove from table
                 const card = this.table.buyableCards.find(cc => cc.card.cardName === data.card)!;
@@ -1012,7 +1015,7 @@ export default class GamePage extends Vue {
             });
     }
 
-    addCardToPlayer (player: Player, card: CardName) {
+    addCardToPlayer (player: Player, card: CardName, buying: boolean) {
         let cost = -1;
         if (dominants.includes(card)) {
             const cardObj = player.winningCards.map(cc => cc.card).find(c => c.cardName === card)!;
@@ -1027,8 +1030,20 @@ export default class GamePage extends Vue {
             player.cards.push({ card: { ...cardObj, bought: true }, count: 1 });
             cost = cardObj.cost;
         }
-        player.money -= cost;
-        this.table.bank += cost;
+        if (buying) {
+            player.money -= cost;
+            this.table.bank += cost;
+        }
+    }
+
+    removeCardFromPlayer (player: Player, card: CardName) {
+        // assumes player has this card
+        const cardObj = player.cards.find(cc => cc.card.cardName === card)!;
+        cardObj.count -= 1;
+
+        if (cardObj.count === 0) {
+            player.cards = player.cards.filter(cc => cc.card.cardName !== card);
+        }
     }
 }
 </script>

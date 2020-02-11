@@ -63,7 +63,7 @@ export interface PassivePurpleCardEffects {
     }
 }
 export interface ActivePurpleCardEffects {
-    results: { [card in CardName]?: any; }
+    results: { [card in CardName]?: OfficeBuildingEffect|StadiumEffect; }
 }
 // subtypes for ActivePurpleCardEffects
 export interface OfficeBuildingEffect {
