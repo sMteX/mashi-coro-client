@@ -11,6 +11,7 @@
             cancelText="Zrušit"
             @ok="tvStudioModalOk")
             // - all players listed with money
+            // - TODO: show card maybe?
             | Vyberte hráče, kterému vezmete 5 mincí:
             a-radio-group(v-model="tvStudioTarget")
                 a-radio(v-for="(player, index) in tvStudioModalTargets"
@@ -24,6 +25,15 @@
             @ok="officeBuildingModalOk"
             @cancel="officeBuildingModalCancel")
             // - pick a player and then his card
+            | Vyberte svoji kartu a pak hráče a jeho kartu, které si navzájem vyměníte:
+            a-select(size="large" @change="onOfficeBuildingSelectChange")
+                a-select-option(v-for="(cardCount, index) in thisPlayer.cards" :key="index" :value="cardCount.card.cardName")
+                    | {{ cardCount.card.name }} ({{ cardCount.count }})
+            br
+            // - TODO: popover? for both?
+            a-cascader(size="large" :options="officeBuildingItems" @change="onOfficeBuildingCascaderChange")
+                // - template(slot="displayRender" slot-scope="{labels, selectedOptions}")
+
 
         a-col.game-container(span=18, offset=3)
             a-row(type="flex" justify="center")
@@ -177,7 +187,11 @@ export default class GamePage extends Vue {
     private tvStudioModalVisible = false;
     private tvStudioTarget = -1;
     private officeBuildingModalVisible = false;
-
+    private officeBuildingTarget = {
+        targetPlayerId: -1,
+        swapCardOwn: -1,
+        swapCardTarget: -1
+    };
 
     private cardDb!: {
         [name in CardName]: Omit<CardInterface, 'bought'>;
@@ -840,11 +854,15 @@ export default class GamePage extends Vue {
         // reset all related values!
         this.activePurpleResults = {};
         this.tvStudioTarget = -1;
+        this.officeBuildingTarget = {
+            targetPlayerId: -1,
+            swapCardOwn: -1,
+            swapCardTarget: -1
+        };
     }
 
     tvStudioModalOk () {
         this.activePurpleResults[CardName.TelevisionStudio] = this.tvStudioTarget;
-        this.tvStudioTarget = -1;
         this.tvStudioModalVisible = false;
 
         if (this.playerHasCard(this.thisPlayer, CardName.OfficeBuilding)) {
@@ -853,12 +871,51 @@ export default class GamePage extends Vue {
             this.sendActivePurpleCardsResult();
         }
     }
+
+    get officeBuildingItems () {
+        return this.otherPlayers.map(player => ({
+            value: player.id,
+            label: player.name,
+            children: player.cards.map(cc => ({
+                value: cc.card.cardName,
+                label: `${cc.card.name} (${cc.count})`
+            }))
+        }));
+    }
+
+    onOfficeBuildingSelectChange (value) {
+        // TODO: what here?
+        this.officeBuildingTarget.swapCardOwn = -1; //TODO
+    }
+
+    onOfficeBuildingCascaderChange (value, selectedOptions) {
+        // TODO: what here?
+        this.officeBuildingTarget.targetPlayerId = -1; // TODO
+        this.officeBuildingTarget.swapCardTarget = -1; // TODO
+    }
+
     officeBuildingModalOk () {
+        // TODO: check values
+        const valid = true;
+        if (!valid) {
+            return;
+        }
+        this.officeBuildingModalVisible = false;
 
+        this.activePurpleResults[CardName.OfficeBuilding] = {
+            // currentPlayerId is sent in the event itself
+            targetPlayerId: this.officeBuildingTarget.targetPlayerId, // TODO: somehow from the cascader
+            swapCardOwn: this.officeBuildingTarget.swapCardOwn, // TODO: somehow from the select
+            swapCardTarget: this.officeBuildingTarget.swapCardTarget // TODO: somehow from the cascader
+            // or ...this.officeBuildingTarget ?
+        };
+        this.sendActivePurpleCardsResult();
     }
+
     officeBuildingModalCancel () {
-
+        // TODO: we don't want to play the card, send msg to server
     }
+
     onActivePurpleCardWait () {
         /*
             this will get ugly
