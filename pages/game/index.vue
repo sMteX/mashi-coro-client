@@ -1,7 +1,29 @@
 <template lang="pug">
     div
         // - dialogs - really need to figure out a better way to do it
-
+        a-modal(title="Televizní studio"
+            :visible="tvStudioModalVisible"
+            :closable="false"
+            :maskClosable="false"
+            :cancelButtonProps="{ props: { disabled: true } }"
+            :keyboard="false"
+            okText="Potvrdit"
+            cancelText="Zrušit"
+            @ok="tvStudioModalOk")
+            // - all players listed with money
+            | Vyberte hráče, kterému vezmete 5 mincí:
+            a-radio-group(v-model="tvStudioTarget")
+                a-radio(v-for="(player, index) in tvStudioModalTargets"
+                        :key="index"
+                        :value="player.id")
+                    | {{ player.name }} - {{ player.money }} mincí
+        a-modal(title="Kancelářská budova"
+            :visible="officeBuildingModalVisible"
+            okText="Potvrdit"
+            cancelText="Zrušit"
+            @ok="officeBuildingModalOk"
+            @cancel="officeBuildingModalCancel")
+            // - pick a player and then his card
 
         a-col.game-container(span=18, offset=3)
             a-row(type="flex" justify="center")
@@ -150,6 +172,13 @@ const dominants = [CardName.Station, CardName.ShoppingCenter, CardName.Amusement
     }
 })
 export default class GamePage extends Vue {
+    private activePurpleResults: { [card in CardName]?: any } = {};
+    // dialog stuff
+    private tvStudioModalVisible = false;
+    private tvStudioTarget = -1;
+    private officeBuildingModalVisible = false;
+
+
     private cardDb!: {
         [name in CardName]: Omit<CardInterface, 'bought'>;
     };
@@ -797,35 +826,74 @@ export default class GamePage extends Vue {
         ];
     }
 
-    onActivePurpleCardWait () {
-        // TODO: check all TRIGGERED active purple cards, gather inputs, send to server (at once so we can send the response once too)
-        //  pretty much just roll=6 can mean multiple cards, other than that it's single cards, might be easier to implement to do just manual "has card" check instead of iterating, filtering..
+    get tvStudioModalTargets () {
+        return this.otherPlayers.map(({ id, name, money }) => ({ id, name, money }));
+    }
 
-        // this will be on component level (so dialogs and their callbacks can access it)
-        // object, property keys are card names (enum), value is pretty much any type, server will handle
-        const results: { [card in CardName]?: any } = {};
+    sendActivePurpleCardsResult () {
+        this.socket.emit(events.output.ACTIVE_PURPLE_CARDS_INPUT, {
+            game: this.gameSlug,
+            playerId: this.thisPlayer.id,
+            inputs: this.activePurpleResults
+        });
+
+        // reset all related values!
+        this.activePurpleResults = {};
+        this.tvStudioTarget = -1;
+    }
+
+    tvStudioModalOk () {
+        this.activePurpleResults[CardName.TelevisionStudio] = this.tvStudioTarget;
+        this.tvStudioTarget = -1;
+        this.tvStudioModalVisible = false;
+
+        if (this.playerHasCard(this.thisPlayer, CardName.OfficeBuilding)) {
+            this.officeBuildingModalVisible = true;
+        } else {
+            this.sendActivePurpleCardsResult();
+        }
+    }
+    officeBuildingModalOk () {
+
+    }
+    officeBuildingModalCancel () {
+
+    }
+    onActivePurpleCardWait () {
+        /*
+            this will get ugly
+            The way AntDesign Modals work pretty much fucks us a lot. We can't implement a "wait" mechanic as usual prompt()
+            so we must chain callbacks and send the results to the server in the very last callback instead of gathering the results nicely here
+
+            let's recap cards that need user input:
+                6 - Television Studio - current player gets 5 coins from selected player
+                6 - Office Building - current player and selected player swap a card
+                8 - Waste Water Plant - current player names a card, all players disable that card
+
+            so in short, it's either:
+                1 modal => send message to server
+                    - open respective dialog, upon callback send message
+                2 modals => open one => in callback open second => in callback send message to server
+                    - this can happen only in 6, and TV studio is NOT OPTIONAL
+                    - it's probably better to open TV studio first, since you can't dismiss this one
+                        - in callback, if player ALSO has Office Building:
+                            open Office Building dialog
+                        - else:
+                            send message
+                    - in Office Building dialog:
+                        - upon both OK and CANCEL - send message
+        */
+        const hasTv = this.playerHasCard(this.thisPlayer, CardName.TelevisionStudio);
+        const hasOffice = this.playerHasCard(this.thisPlayer, CardName.OfficeBuilding);
         if (this.dice.sum === 6) {
-            if (this.playerHasCard(this.thisPlayer, CardName.TelevisionStudio)) {
-                // TODO: show some kind of "choose a player" dialogue - possibly with listed amount of money
-            }
-            if (this.playerHasCard(this.thisPlayer, CardName.OfficeBuilding)) {
-                // TODO: 1) ask a player if he wants to use this card
-                //  2) if yes:
-                //  3) pick a player
-                //  4) pick his card
-                //  5) pick your card
+            if (hasTv) {
+                // TODO: show TV dialog FIRST, in its callback MAYBE Office Building dialog
+                this.tvStudioModalVisible = true;
+            } else if (hasOffice) {
+                // TODO: show only Office Building dialog
             }
         }
-        // TODO: add other cards - IT Center (10), Waste Water Plant (8)
-        // technically, IT Center isn't handled here, and part of it is passive and part of it is processed at end of turn, so just Waste Water Plant
-        if (Object.keys(results).length > 0) {
-            // we can choose to NOT trigger Office Building, leaving results empty (with no properties = keys)
-            this.socket.emit(events.output.ACTIVE_PURPLE_CARDS_INPUT, {
-                game: this.gameSlug,
-                playerId: this.thisPlayer.id,
-                inputs: results
-            });
-        }
+        // TODO: else - waste water plant (8)
     }
 
     setupHandlers () {
