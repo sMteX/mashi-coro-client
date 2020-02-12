@@ -1,5 +1,8 @@
 <template lang="pug">
     div
+        // - dialogs - really need to figure out a better way to do it
+
+
         a-col.game-container(span=18, offset=3)
             a-row(type="flex" justify="center")
                 MachiKoroLogo
@@ -794,6 +797,37 @@ export default class GamePage extends Vue {
         ];
     }
 
+    onActivePurpleCardWait () {
+        // TODO: check all TRIGGERED active purple cards, gather inputs, send to server (at once so we can send the response once too)
+        //  pretty much just roll=6 can mean multiple cards, other than that it's single cards, might be easier to implement to do just manual "has card" check instead of iterating, filtering..
+
+        // this will be on component level (so dialogs and their callbacks can access it)
+        // object, property keys are card names (enum), value is pretty much any type, server will handle
+        const results: { [card in CardName]?: any } = {};
+        if (this.dice.sum === 6) {
+            if (this.playerHasCard(this.thisPlayer, CardName.TelevisionStudio)) {
+                // TODO: show some kind of "choose a player" dialogue - possibly with listed amount of money
+            }
+            if (this.playerHasCard(this.thisPlayer, CardName.OfficeBuilding)) {
+                // TODO: 1) ask a player if he wants to use this card
+                //  2) if yes:
+                //  3) pick a player
+                //  4) pick his card
+                //  5) pick your card
+            }
+        }
+        // TODO: add other cards - IT Center (10), Waste Water Plant (8)
+        // technically, IT Center isn't handled here, and part of it is passive and part of it is processed at end of turn, so just Waste Water Plant
+        if (Object.keys(results).length > 0) {
+            // we can choose to NOT trigger Office Building, leaving results empty (with no properties = keys)
+            this.socket.emit(events.output.ACTIVE_PURPLE_CARDS_INPUT, {
+                game: this.gameSlug,
+                playerId: this.thisPlayer.id,
+                inputs: results
+            });
+        }
+    }
+
     setupHandlers () {
         this.socket
             .on(events.input.GAME_DATA_LOAD, (data: GameDataLoad) => {
@@ -898,7 +932,7 @@ export default class GamePage extends Vue {
                 p.money = data.newMoney;
                 this.currentTurnPhase = TurnPhase.PurpleCards;
 
-                /* serverside: after green cards are done, check if player has some purple cards that NEED user input (and are actually triggered)
+                /* server side: after green cards are done, check if player has some purple cards that NEED user input (and are actually triggered)
                         exactly 50:50, 4 cards active, 4 cards passive
                         active: Office Building, Water Treatment Plant, TV Studio, IT Center
                         passive: Stadium, Financial Office, Park, Publishing House
@@ -918,36 +952,8 @@ export default class GamePage extends Vue {
                 });
                 // still purple cards
             })
-            .on(events.input.ACTIVE_PURPLE_CARD_WAIT, () => {
-                // TODO: check all TRIGGERED active purple cards, gather inputs, send to server (at once so we can send the response once too)
-                //  pretty much just roll=6 can mean multiple cards, other than that it's single cards, might be easier to implement to do just manual "has card" check instead of iterating, filtering..
-
-                // this will be on component level (so dialogs and their callbacks can access it)
-                // object, property keys are card names (enum), value is pretty much any type, server will handle
-                const results: { [card in CardName]?: any } = {};
-                if (this.dice.sum === 6) {
-                    if (this.playerHasCard(this.thisPlayer, CardName.TelevisionStudio)) {
-                        // TODO: show some kind of "choose a player" dialogue - possibly with listed amount of money
-                    }
-                    if (this.playerHasCard(this.thisPlayer, CardName.OfficeBuilding)) {
-                        // TODO: 1) ask a player if he wants to use this card
-                        //  2) if yes:
-                        //  3) pick a player
-                        //  4) pick his card
-                        //  5) pick your card
-                    }
-                }
-                // TODO: add other cards - IT Center (10), Waste Water Plant (8)
-                // technically, IT Center isn't handled here, and part of it is passive and part of it is processed at end of turn, so just Waste Water Plant
-                if (Object.keys(results).length > 0) {
-                    // we can choose to NOT trigger Office Building, leaving results empty (with no properties = keys)
-                    this.socket.emit(events.output.ACTIVE_PURPLE_CARDS_INPUT, {
-                        game: this.gameSlug,
-                        playerId: this.thisPlayer.id,
-                        inputs: results
-                    });
-                }
-            })
+            // following event is separated because it's dealing with modals and I'd like to have the handlers somewhat "near" each other
+            .on(events.input.ACTIVE_PURPLE_CARD_WAIT, this.onActivePurpleCardWait)
             .on(events.input.ACTIVE_PURPLE_CARD_RESULT, (data: ActivePurpleCardEffects) => {
                 Object.entries(data.results).forEach(([cardName, result]) => {
                     const cardEnum = Number(cardName) as CardName;

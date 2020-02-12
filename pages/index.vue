@@ -1,5 +1,16 @@
 <template lang="pug">
     div.container
+        // - a-modal(title="Close this dialog"
+        // -    :visible="dv"
+        // -    :closable="false"
+        // -    :maskClosable="false"
+        // -    :cancelButtonProps="{ props: { disabled: true } }"
+        // -    :keyboard="false"
+        // -    okText="Confirm"
+        // -    cancelText="Nah fuck you"
+        // -    @ok="dialogOk"
+        // -    @cancel="dialogCancel")
+        // -    | Try me bitch
         div
             logo
             h1.title client
