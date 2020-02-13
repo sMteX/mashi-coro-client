@@ -244,19 +244,19 @@ export default class GamePage extends Vue {
     }
 
     mounted () {
-        this.dummySetup = true;
+        // this.dummySetup = true;
         // without it is temporarily allowed through dummy data
-        this.useDummyData();
+        // this.useDummyData();
         // TODO: redirect if player didn't come from lobby (or maybe just don't use pages for this, but instead giant components that just get switched?)
-        // this.socket = io.connect(
-        //     `${process.env.serverUrl}/${events.namespaceName}`
-        // );
-        // this.gameSlug = this.$route.query.id as string;
-        // this.setupHandlers();
-        // this.socket.emit(events.output.PLAYER_CONNECT, {
-        //     game: this.gameSlug,
-        //     id: Number(this.$route.query.playerId)
-        // });
+        this.socket = io.connect(
+            `${process.env.serverUrl}/${events.namespaceName}`
+        );
+        this.gameSlug = this.$route.query.id as string;
+        this.setupHandlers();
+        this.socket.emit(events.output.PLAYER_CONNECT, {
+            game: this.gameSlug,
+            id: Number(this.$route.query.playerId)
+        });
     }
 
     get isPlayerOnTurn (): boolean {
@@ -1108,7 +1108,9 @@ export default class GamePage extends Vue {
                 });
             })
             .on(events.input.BUILDING_POSSIBLE, () => {
-                this.log('Nyní můžete stavět.', true);
+                if (this.isPlayerOnTurn) {
+                    this.log('Nyní můžete stavět.', true);
+                }
                 this.currentTurnPhase = TurnPhase.Build;
             })
             .on(events.input.PLAYER_BOUGHT_CARD, (data: PlayerBoughtCard) => {
