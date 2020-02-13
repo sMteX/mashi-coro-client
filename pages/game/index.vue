@@ -1,7 +1,8 @@
 <template lang="pug">
     div
         // - dialogs - really need to figure out a better way to do it
-        a-modal(title="Televizní studio"
+        a-modal(v-if="loaded"
+            title="Televizní studio"
             :visible="tvStudioModalVisible"
             :closable="false"
             :maskClosable="false"
@@ -10,30 +11,26 @@
             okText="Potvrdit"
             cancelText="Zrušit"
             @ok="tvStudioModalOk")
-            // - all players listed with money
-            // - TODO: show card maybe?
-            | Vyberte hráče, kterému vezmete 5 mincí:
+            p Vyberte hráče, kterému vezmete 5 mincí:
             a-radio-group(v-model="tvStudioTarget")
                 a-radio(v-for="(player, index) in tvStudioModalTargets"
                         :key="index"
                         :value="player.id")
                     | {{ player.name }} - {{ player.money }} mincí
-        a-modal(title="Kancelářská budova"
+        a-modal(v-if="loaded"
+            title="Kancelářská budova"
             :visible="officeBuildingModalVisible"
             okText="Potvrdit"
             cancelText="Zrušit"
             @ok="officeBuildingModalOk"
             @cancel="officeBuildingModalCancel")
-            // - pick a player and then his card
-            | Vyberte svoji kartu a pak hráče a jeho kartu, které si navzájem vyměníte:
-            a-select(size="large" @change="onOfficeBuildingSelectChange")
+            p Vyberte svoji kartu a pak hráče a jeho kartu, které si navzájem vyměníte. Pokud kartu hrát nechcete, zrušte dialog:
+            a-select(size="large" placeholder="Vyberte svoji kartu" @change="onOfficeBuildingSelectChange" style="width: 300px; margin-bottom: 20px")
                 a-select-option(v-for="(cardCount, index) in thisPlayer.cards" :key="index" :value="cardCount.card.cardName")
                     | {{ cardCount.card.name }} ({{ cardCount.count }})
-            br
             // - TODO: popover? for both?
-            a-cascader(size="large" :options="officeBuildingItems" @change="onOfficeBuildingCascaderChange")
+            a-cascader(size="large" placeholder="Vyberte hráče a jeho kartu" :options="officeBuildingItems" @change="onOfficeBuildingCascaderChange" style="width: 300px")
                 // - template(slot="displayRender" slot-scope="{labels, selectedOptions}")
-
 
         a-col.game-container(span=18, offset=3)
             a-row(type="flex" justify="center")
@@ -862,10 +859,14 @@ export default class GamePage extends Vue {
     }
 
     tvStudioModalOk () {
+        if (this.tvStudioTarget === -1) {
+            return;
+        }
         this.activePurpleResults[CardName.TelevisionStudio] = this.tvStudioTarget;
         this.tvStudioModalVisible = false;
 
-        if (this.playerHasCard(this.thisPlayer, CardName.OfficeBuilding)) {
+        // dice check probably unnecessary but it doesn't hurt to check again
+        if (this.dice.sum === 6 && this.playerHasCard(this.thisPlayer, CardName.OfficeBuilding)) {
             this.officeBuildingModalVisible = true;
         } else {
             this.sendActivePurpleCardsResult();
@@ -883,20 +884,22 @@ export default class GamePage extends Vue {
         }));
     }
 
-    onOfficeBuildingSelectChange (value) {
-        // TODO: what here?
-        this.officeBuildingTarget.swapCardOwn = -1; //TODO
+    onOfficeBuildingSelectChange (value: number) {
+        this.officeBuildingTarget.swapCardOwn = value as CardName;
     }
 
-    onOfficeBuildingCascaderChange (value, selectedOptions) {
-        // TODO: what here?
-        this.officeBuildingTarget.targetPlayerId = -1; // TODO
-        this.officeBuildingTarget.swapCardTarget = -1; // TODO
+    onOfficeBuildingCascaderChange (value: number[]) {
+        if (value.length !== 2) {
+            return;
+        }
+        const [playerId, cardId] = value;
+        this.officeBuildingTarget.targetPlayerId = playerId;
+        this.officeBuildingTarget.swapCardTarget = cardId as CardName;
     }
 
     officeBuildingModalOk () {
-        // TODO: check values
-        const valid = true;
+        // TODO: do we need a more rigorous validity check?
+        const valid = this.officeBuildingTarget.targetPlayerId !== -1 && this.officeBuildingTarget.swapCardTarget !== -1 && this.officeBuildingTarget.swapCardOwn !== -1;
         if (!valid) {
             return;
         }
@@ -913,7 +916,8 @@ export default class GamePage extends Vue {
     }
 
     officeBuildingModalCancel () {
-        // TODO: we don't want to play the card, send msg to server
+        this.officeBuildingModalVisible = false;
+        this.sendActivePurpleCardsResult();
     }
 
     onActivePurpleCardWait () {
@@ -948,6 +952,7 @@ export default class GamePage extends Vue {
                 this.tvStudioModalVisible = true;
             } else if (hasOffice) {
                 // TODO: show only Office Building dialog
+                this.officeBuildingModalVisible = true;
             }
         }
         // TODO: else - waste water plant (8)
