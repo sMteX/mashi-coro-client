@@ -49,17 +49,17 @@
                 a-row.delimiter
                 a-row.game(v-if="loaded")
                     a-row
-                        h2(v-if="isPlayerOnTurn") Jste na tahu.
-                        h2(v-else) Právě je na tahu hráč {{ currentPlayer.name }}
+                        h2(v-show="isPlayerOnTurn") Jste na tahu.
+                        h2(v-show="!isPlayerOnTurn") Právě je na tahu hráč {{ currentPlayer.name }}
                         p Fáze tahu: {{ turnPhases[currentTurnPhase] }}
-                    a-row(v-if="isPlayerOnTurn")
+                    a-row(v-show="isPlayerOnTurn")
                         h3 Akce
                         a-button.action-button(v-for="(button, index) in buttons" :key="index" :disabled="!button.isActive()" @click="button.handler") {{ button.text }}
-                    a-row(v-if="currentTurnPhase >= 2")
+                    a-row(v-show="currentTurnPhase >= 2")
                         h3 Kostky
-                        template(v-if="chosenAmountOfDice === 1")
+                        div(v-show="chosenAmountOfDice === 1")
                             p Kostka: {{ dice.first }}
-                        template(v-else)
+                        div(v-show="chosenAmountOfDice === 2")
                             p První kostka: {{ dice.first }}
                             p Druhá kostka: {{ dice.second }}
                             p Součet: {{ dice.sum }}
@@ -1018,7 +1018,10 @@ export default class GamePage extends Vue {
                 }
             })
             .on(events.input.FINAL_DICE_ROLL, (data: DiceRollOutput) => {
-                this.log(`Konečný hod hráče ${this.playerName(data.player)} je ${data.dice.join(', ')}`, true);
+                if (this.playerHasCard(this.findPlayer(data.player), CardName.Transmitter)) {
+                    // only if player has Transmitter and actually CAN change their mind, show this message
+                    this.log(`Konečný hod hráče ${this.playerName(data.player)} je ${data.dice.join(', ')}`, true);
+                }
                 const [first, second] = data.dice;
                 this.dice.first = first;
                 this.dice.second = second;
@@ -1085,6 +1088,7 @@ export default class GamePage extends Vue {
             // following event is separated because it's dealing with modals and I'd like to have the handlers somewhat "near" each other
             .on(events.input.ACTIVE_PURPLE_CARD_WAIT, this.onActivePurpleCardWait)
             .on(events.input.ACTIVE_PURPLE_CARD_RESULT, (data: ActivePurpleCardEffects) => {
+                console.log('active purple card results', data);
                 Object.entries(data.results).forEach(([cardName, result]) => {
                     const cardEnum = Number(cardName) as CardName;
                     if (cardEnum === CardName.OfficeBuilding) {

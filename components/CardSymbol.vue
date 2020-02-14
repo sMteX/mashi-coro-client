@@ -12,21 +12,43 @@
 </template>
 
 <script lang="ts">
-import 'reflect-metadata';
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { Component, Vue } from 'vue-property-decorator';
 import { CardColor, CardSymbol as SymbolEnum } from '~/utils/cards';
-import TowerIcon from '~/components/TowerIcon.vue';
+import TowerIcon from '~/components/icons/TowerIcon.vue';
+
+const CardSymbolProps = Vue.extend({
+    props: {
+        symbol: {
+            required: true,
+            type: Object as () => SymbolEnum
+        },
+        // if symbol is Tower, two additional properties must be provided
+        // eslint-disable-next-line vue/require-default-prop
+        color: {
+            required: false,
+            type: Object as () => CardColor
+        },
+        bought: {
+            required: false,
+            type: Boolean
+        },
+        width: {
+            type: Number,
+            required: false,
+            default: 20
+        },
+        height: {
+            type: Number,
+            required: false,
+            default: 20
+        }
+    }
+});
 
 @Component({
     components: { TowerIcon }
 })
-export default class CardSymbol extends Vue {
-    @Prop() readonly symbol!: SymbolEnum;
-    @Prop() readonly color?: CardColor;
-    @Prop() readonly bought?: boolean;
-    @Prop() readonly width: number = 20;
-    @Prop() readonly height: number = 20;
-
+export default class CardSymbol extends CardSymbolProps {
     readonly symbols = SymbolEnum;
 
     get towerType (): 'purple'|'dominant-inactive'|'dominant-active' {

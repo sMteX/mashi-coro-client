@@ -10,8 +10,7 @@
 </template>
 
 <script lang="ts">
-import 'reflect-metadata';
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { Component, Vue } from 'vue-property-decorator';
 import Card from './Card.vue';
 import { CardCount } from '~/utils/interfaces/events/game/input.interface';
 import { CardColor, CardLocation } from '~/utils/cards';
@@ -27,14 +26,21 @@ interface Player {
     winningCards: CardCount[];
 }
 
+const PlayerCardProps = Vue.extend({
+    props: {
+        player: {
+            required: true,
+            type: Object as () => Player
+        }
+    }
+});
+
 @Component({
     components: {
         Card
     }
 })
-export default class PlayerCards extends Vue {
-    @Prop() readonly player!: Player;
-
+export default class PlayerCards extends PlayerCardProps {
     cardLocation = CardLocation;
 
     get playerCards (): CardCount[][] {

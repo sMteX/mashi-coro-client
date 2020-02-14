@@ -6,15 +6,27 @@
 </template>
 
 <script lang="ts">
-import 'reflect-metadata';
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { Component, Vue } from 'vue-property-decorator';
+
+const TowerIconProps = Vue.extend({
+    props: {
+        type: {
+            type: Object as () => 'purple'|'dominant-inactive'|'dominant-active',
+            required: true
+        },
+        width: {
+            type: Number,
+            required: true
+        },
+        height: {
+            type: Number,
+            required: true
+        }
+    }
+});
 
 @Component
-export default class TowerIcon extends Vue {
-    @Prop() readonly type!: 'purple'|'dominant-inactive'|'dominant-active';
-    @Prop() readonly width!: number;
-    @Prop() readonly height!: number;
-
+export default class TowerIcon extends TowerIconProps {
     get color (): string {
         if (this.type === 'purple') {
             return '#952981';

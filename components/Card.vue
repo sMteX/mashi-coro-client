@@ -40,8 +40,7 @@
 </template>
 
 <script lang="ts">
-import 'reflect-metadata';
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { Component, Vue } from 'vue-property-decorator';
 import { CardColor, CardLocation } from '~/utils/cards';
 import { CardCount } from '~/utils/interfaces/events/game/input.interface';
 import CardSymbol from '~/components/CardSymbol.vue';
@@ -56,18 +55,36 @@ const cssBackgrounds = {
     winningInactive: 'winning-inactive-bg'
 };
 
+const CardProps = Vue.extend({
+    props: {
+        clickable: {
+            required: false,
+            type: Boolean,
+            default: false
+        },
+        clickEvent: {
+            required: false,
+            type: Function,
+            default: null
+        },
+        info: {
+            required: true,
+            type: Object as () => CardCount
+        },
+        location: {
+            required: true,
+            type: Object as () => CardLocation
+        }
+    }
+});
+
 @Component({
     components: {
         CardDescription,
         CardSymbol
     }
 })
-export default class Card extends Vue {
-    @Prop() readonly clickable?: boolean = false;
-    @Prop() readonly clickEvent?: (...args: any[]) => void;
-    @Prop() readonly info!: CardCount;
-    @Prop() readonly location!: CardLocation;
-
+export default class Card extends CardProps {
     cardColor = CardColor;
     cardLocation = CardLocation;
     cardBackgroundMap = {

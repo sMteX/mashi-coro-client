@@ -1,12 +1,19 @@
 <script lang="ts">
-import { Vue, Component, Prop } from 'vue-property-decorator';
+import { Vue, Component } from 'vue-property-decorator';
 import { CardColor, CardSymbol as SymbolEnum } from '~/utils/cards';
 import CardSymbol from '~/components/CardSymbol.vue';
 
-@Component
-export default class CardDescription extends Vue {
-    @Prop() readonly text!: string;
+const CardDescriptionProps = Vue.extend({
+    props: {
+        text: {
+            type: String,
+            required: true
+        }
+    }
+});
 
+@Component
+export default class CardDescription extends CardDescriptionProps {
     render (createElement: Vue.CreateElement) {
         const regex = /#SYMBOL_(\d+)/g;
         const result: (string|Vue.VNode)[] = this.text.split(regex)
