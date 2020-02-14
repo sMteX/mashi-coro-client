@@ -1,4 +1,4 @@
-<template lang="pug" functional>
+<template lang="pug">
     a-row
         a-row
             h2 {{ player.name }}

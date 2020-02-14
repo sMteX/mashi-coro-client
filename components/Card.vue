@@ -1,4 +1,4 @@
-<template lang="pug" functional>
+<template lang="pug">
     a-popover
         template(slot="content")
             // - dominant closeup
@@ -23,8 +23,8 @@
                     a-row.text-center.bottom-row
                         a-col(span=6)
                             a-row
-                                MultiPlayerIcon(v-if="triggeredByAll" :width="30" :height="30")
-                                SinglePlayerIcon(v-else :width="15" :height="30")
+                                MultiPlayerIcon(v-if="triggeredByAll")
+                                SinglePlayerIcon(v-else)
                             a-row {{ info.card.cost }}
                         a-col(span=18)
                             a-row
@@ -57,6 +57,14 @@ const cssBackgrounds = {
     winningInactive: 'winning-inactive-bg'
 };
 
+const cardBackgroundMap = {
+    [CardColor.Green]: cssBackgrounds.green,
+    [CardColor.Blue]: cssBackgrounds.blue,
+    [CardColor.Purple]: cssBackgrounds.purple,
+    [CardColor.Red]: cssBackgrounds.red,
+    [CardColor.Dominant]: cssBackgrounds.winningInactive
+};
+
 const CardProps = Vue.extend({
     props: {
         clickable: {
@@ -75,7 +83,10 @@ const CardProps = Vue.extend({
         },
         location: {
             required: true,
-            type: Object as () => CardLocation
+            type: Number,
+            validator (value) {
+                return Number(value) in CardLocation;
+            }
         }
     }
 });
@@ -91,13 +102,6 @@ const CardProps = Vue.extend({
 export default class Card extends CardProps {
     cardColor = CardColor;
     cardLocation = CardLocation;
-    cardBackgroundMap = {
-        [CardColor.Green]: cssBackgrounds.green,
-        [CardColor.Blue]: cssBackgrounds.blue,
-        [CardColor.Purple]: cssBackgrounds.purple,
-        [CardColor.Red]: cssBackgrounds.red,
-        [CardColor.Dominant]: cssBackgrounds.winningInactive
-    };
 
     triggerClick () {
         if (this.clickable && this.clickEvent) {
@@ -113,7 +117,7 @@ export default class Card extends CardProps {
         if (this.info.card.color === CardColor.Dominant) {
             return (this.info.card.bought) ? cssBackgrounds.winningActive : cssBackgrounds.winningInactive;
         }
-        return this.cardBackgroundMap[this.info.card.color];
+        return cardBackgroundMap[this.info.card.color];
     }
 }
 </script>

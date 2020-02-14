@@ -15,10 +15,10 @@ const CardDescriptionProps = Vue.extend({
 
 @Component
 export default class CardDescription extends CardDescriptionProps {
-    render (createElement: Vue.CreateElement) {
+    render (createElement: Vue.CreateElement, context: Vue.RenderContext) {
         const regex = /#SYMBOL_(\d+)/g;
-        const result: (string|Vue.VNode)[] = this.text.split(regex)
-            .filter(s => s.trim() !== '')
+        const result: (string|Vue.VNode)[] = context.props.text.split(regex)
+            .filter((s: string) => s.trim() !== '')
             .map((s: string) => {
                 const ns = Number(s);
                 if (!isNaN(ns)) {

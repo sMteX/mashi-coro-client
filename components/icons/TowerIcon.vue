@@ -1,4 +1,4 @@
-<template lang="pug" functional>
+<template lang="pug">
     svg(version="1.1" viewBox="0 0 100 100" :width="width" :height="height" xmlns="http://www.w3.org/2000/svg")
         g
             circle(cx="50" cy="50" r="50" :fill="color" stroke-width="3" stroke="#fff")
@@ -11,7 +11,10 @@ import { Component, Vue } from 'vue-property-decorator';
 const TowerIconProps = Vue.extend({
     props: {
         type: {
-            type: Object as () => 'purple'|'dominant-inactive'|'dominant-active',
+            type: String,
+            validator (value) {
+                return ['purple', 'dominant-inactive', 'dominant-active'].includes(value);
+            },
             required: true
         },
         width: {

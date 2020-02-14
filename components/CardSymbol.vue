@@ -1,4 +1,4 @@
-<template lang="pug" functional>
+<template lang="pug">
     WheatIcon(v-if="symbol === symbols.Wheat" :width="width" :height="height")
     BoxIcon(v-else-if="symbol === symbols.Box" :width="width" :height="height")
     PigIcon(v-else-if="symbol === symbols.Pig" :width="width" :height="height")
@@ -15,6 +15,7 @@
 import { Component, Vue } from 'vue-property-decorator';
 import TowerIcon from './icons/TowerIcon.vue';
 import BoatIcon from './icons/BoatIcon.vue';
+import BoxIcon from './icons/BoxIcon.vue';
 import CoffeeIcon from './icons/CoffeeIcon.vue';
 import CogIcon from './icons/CogIcon.vue';
 import FactoryIcon from './icons/FactoryIcon.vue';
@@ -28,13 +29,19 @@ const CardSymbolProps = Vue.extend({
     props: {
         symbol: {
             required: true,
-            type: Object as () => SymbolEnum
+            type: Number,
+            validator (value) {
+                return Number(value) in SymbolEnum;
+            }
         },
         // if symbol is Tower, two additional properties must be provided
         // eslint-disable-next-line vue/require-default-prop
         color: {
             required: false,
-            type: Object as () => CardColor
+            type: Number,
+            validator (value) {
+                return Number(value) in CardColor;
+            }
         },
         bought: {
             required: false,
@@ -56,6 +63,7 @@ const CardSymbolProps = Vue.extend({
 @Component({
     components: {
         BoatIcon,
+        BoxIcon,
         CoffeeIcon,
         CogIcon,
         FactoryIcon,
