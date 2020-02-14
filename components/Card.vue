@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang="pug" functional>
     a-popover
         template(slot="content")
             // - dominant closeup
@@ -23,8 +23,8 @@
                     a-row.text-center.bottom-row
                         a-col(span=6)
                             a-row
-                                img(v-if="triggeredByAll" src="@/assets/icons/multi_player.svg" width="30" height="30")
-                                img(v-else src="@/assets/icons/single_player.svg" width="15" height="30")
+                                MultiPlayerIcon(v-if="triggeredByAll" :width="30" :height="30")
+                                SinglePlayerIcon(v-else :width="15" :height="30")
                             a-row {{ info.card.cost }}
                         a-col(span=18)
                             a-row
@@ -41,6 +41,8 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
+import MultiPlayerIcon from './icons/MultiPlayerIcon.vue';
+import SinglePlayerIcon from './icons/SinglePlayerIcon.vue';
 import { CardColor, CardLocation } from '~/utils/cards';
 import { CardCount } from '~/utils/interfaces/events/game/input.interface';
 import CardSymbol from '~/components/CardSymbol.vue';
@@ -80,6 +82,8 @@ const CardProps = Vue.extend({
 
 @Component({
     components: {
+        MultiPlayerIcon,
+        SinglePlayerIcon,
         CardDescription,
         CardSymbol
     }
