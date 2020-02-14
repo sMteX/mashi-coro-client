@@ -26,7 +26,7 @@
             @cancel="officeBuildingModalCancel")
             p Vyberte svoji kartu a pak hráče a jeho kartu, které si navzájem vyměníte. Pokud kartu hrát nechcete, zrušte dialog:
             a-select(size="large" placeholder="Vyberte svoji kartu" @change="onOfficeBuildingSelectChange" style="width: 300px; margin-bottom: 20px")
-                a-select-option(v-for="(cardCount, index) in thisPlayer.cards" :key="index" :value="cardCount.card.cardName")
+                a-select-option(v-for="(cardCount, index) in officeBuildingPlayerCards" :key="index" :value="cardCount.card.cardName")
                     | {{ cardCount.card.name }} ({{ cardCount.count }})
             // - TODO: popover? for both?
             a-cascader(size="large" placeholder="Vyberte hráče a jeho kartu" :options="officeBuildingItems" @change="onOfficeBuildingCascaderChange" style="width: 300px")
@@ -52,17 +52,18 @@
                         h2(v-show="isPlayerOnTurn") Jste na tahu.
                         h2(v-show="!isPlayerOnTurn") Právě je na tahu hráč {{ currentPlayer.name }}
                         p Fáze tahu: {{ turnPhases[currentTurnPhase] }}
-                    a-row(v-show="isPlayerOnTurn")
+                    a-row
                         h3 Akce
-                        a-button.action-button(v-for="(button, index) in buttons" :key="index" :disabled="!button.isActive()" @click="button.handler") {{ button.text }}
-                    a-row(v-show="currentTurnPhase >= 2")
+                        a-button.action-button(v-for="(button, index) in buttons" v-show="button.isVisible()" :key="index" :disabled="!button.isActive()" @click="button.handler") {{ button.text }}
+                    a-row
                         h3 Kostky
-                        div(v-show="chosenAmountOfDice === 1")
-                            p Kostka: {{ dice.first }}
-                        div(v-show="chosenAmountOfDice === 2")
-                            p První kostka: {{ dice.first }}
-                            p Druhá kostka: {{ dice.second }}
-                            p Součet: {{ dice.sum }}
+                        div(:style="{ height: '50px' }")
+                            div(v-show="currentTurnPhase >= 2 && chosenAmountOfDice === 1")
+                                p Kostka: {{ dice.first }}
+                            div(v-show="currentTurnPhase >= 2 && chosenAmountOfDice === 2")
+                                p První kostka: {{ dice.first }}
+                                p Druhá kostka: {{ dice.second }}
+                                p Součet: {{ dice.sum }}
                     a-row.delimiter
                     a-row
                         a-col(span=12)
@@ -82,9 +83,6 @@
                             a-row
                                 a-row
                                     h3 Dostupné karty:
-                                a-row
-                                    // - probably not even needed
-                                    p Bank: {{ table.bank }}
                                 a-row
                                     a-row(type="flex" justify="space-around" v-for="(row, rowIndex) in buyableCardsTable" :key="rowIndex")
                                         Card(v-for="(card, index) in row" :info="card" :key="index" :clickable="isCardClickable(card)" :clickEvent="buyCard" :location="cardLocation.Table")
@@ -388,32 +386,32 @@ export default class GamePage extends Vue {
 
     // <editor-fold desc="is active getters">
     get isRollOneDiceActive (): boolean {
-        return this.currentTurnPhase === TurnPhase.DiceChoice;
+        return this.isPlayerOnTurn && this.currentTurnPhase === TurnPhase.DiceChoice;
         // return true;
     }
 
     get isRollTwoDiceActive (): boolean {
-        return this.currentTurnPhase === TurnPhase.DiceChoice; // technically a check for Station but the button should be already hidden without Station
+        return this.isPlayerOnTurn && this.currentTurnPhase === TurnPhase.DiceChoice; // technically a check for Station but the button should be already hidden without Station
         // return true;
     }
 
     get isKeepDiceActive (): boolean {
-        return this.currentTurnPhase === TurnPhase.PostRoll && !this.alreadyUsedTransmitter;
+        return this.isPlayerOnTurn && this.currentTurnPhase === TurnPhase.PostRoll && !this.alreadyUsedTransmitter;
         // return true;
     }
 
     get isRollAgainActive (): boolean {
-        return this.currentTurnPhase === TurnPhase.PostRoll && !this.alreadyUsedTransmitter;
+        return this.isPlayerOnTurn && this.currentTurnPhase === TurnPhase.PostRoll && !this.alreadyUsedTransmitter;
         // return true;
     }
 
     get isAddTwoToRollActive (): boolean {
         // TODO: active in PostRoll phase (after check for second roll and 10 - 12 in roll value)
-        return true;
+        return false;
     }
 
     get isEndTurnActive (): boolean {
-        return this.currentTurnPhase > TurnPhase.PurpleCards;
+        return this.isPlayerOnTurn && this.currentTurnPhase > TurnPhase.PurpleCards;
         // return this.currentTurnPhase === TurnPhase.PostBuild || this.currentTurnPhase === TurnPhase.EndTurn;
         // return true;
     }
@@ -421,7 +419,6 @@ export default class GamePage extends Vue {
 
     get buttons () {
         return this.$data._buttons
-            .filter((button: ActionButton) => button.isVisible())
             .sort((a: ActionButton, b: ActionButton) => a.order - b.order);
     }
     // </editor-fold>
@@ -873,14 +870,20 @@ export default class GamePage extends Vue {
         }
     }
 
+    get officeBuildingPlayerCards () {
+        return this.thisPlayer.cards.filter(cc => cc.card.color !== CardColor.Purple);
+    }
+
     get officeBuildingItems () {
         return this.otherPlayers.map(player => ({
             value: player.id,
             label: player.name,
-            children: player.cards.map(cc => ({
-                value: cc.card.cardName,
-                label: `${cc.card.name} (${cc.count})`
-            }))
+            children: player.cards
+                .filter(cc => cc.card.color !== CardColor.Purple)
+                .map(cc => ({
+                    value: cc.card.cardName,
+                    label: `${cc.card.name} (${cc.count})`
+                }))
         }));
     }
 
