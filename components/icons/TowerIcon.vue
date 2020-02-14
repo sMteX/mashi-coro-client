@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang="pug" functional>
     svg(version="1.1" viewBox="0 0 100 100" :width="width" :height="height" xmlns="http://www.w3.org/2000/svg")
         g
             circle(cx="50" cy="50" r="50" :fill="color" stroke-width="3" stroke="#fff")

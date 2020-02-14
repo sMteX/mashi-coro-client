@@ -4,6 +4,7 @@ import { CardColor, CardSymbol as SymbolEnum } from '~/utils/cards';
 import CardSymbol from '~/components/CardSymbol.vue';
 
 const CardDescriptionProps = Vue.extend({
+    functional: true,
     props: {
         text: {
             type: String,

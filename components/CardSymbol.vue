@@ -1,20 +1,28 @@
-<template lang="pug">
-    img(v-if="symbol === symbols.Wheat" src="@/assets/icons/wheat.svg" :width="width" :height="height")
-    img(v-else-if="symbol === symbols.Box" src="@/assets/icons/box.svg" :width="width" :height="height")
-    img(v-else-if="symbol === symbols.Pig" src="@/assets/icons/pig.svg" :width="width" :height="height")
-    img(v-else-if="symbol === symbols.Coffee" src="@/assets/icons/coffee.svg" :width="width" :height="height")
-    img(v-else-if="symbol === symbols.Cog" src="@/assets/icons/cog.svg" :width="width" :height="height")
-    img(v-else-if="symbol === symbols.Factory" src="@/assets/icons/factory.svg" :width="width" :height="height")
-    img(v-else-if="symbol === symbols.Boat" src="@/assets/icons/boat.svg" :width="width" :height="height")
-    img(v-else-if="symbol === symbols.Mall" src="@/assets/icons/mall.svg" :width="width" :height="height")
-    img(v-else-if="symbol === symbols.Suitcase" src="@/assets/icons/suitcase.svg" :width="width" :height="height")
+<template lang="pug" functional>
+    WheatIcon(v-if="symbol === symbols.Wheat" :width="width" :height="height")
+    BoxIcon(v-else-if="symbol === symbols.Box" :width="width" :height="height")
+    PigIcon(v-else-if="symbol === symbols.Pig" :width="width" :height="height")
+    CoffeeIcon(v-else-if="symbol === symbols.Coffee" :width="width" :height="height")
+    CogIcon(v-else-if="symbol === symbols.Cog" :width="width" :height="height")
+    FactoryIcon(v-else-if="symbol === symbols.Factory" :width="width" :height="height")
+    BoatIcon(v-else-if="symbol === symbols.Boat" :width="width" :height="height")
+    MallIcon(v-else-if="symbol === symbols.Mall" :width="width" :height="height")
+    SuitcaseIcon(v-else-if="symbol === symbols.Suitcase" :width="width" :height="height")
     TowerIcon(v-else :type="towerType" :width="width" :height="height")
 </template>
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
+import TowerIcon from './icons/TowerIcon.vue';
+import BoatIcon from './icons/BoatIcon.vue';
+import CoffeeIcon from './icons/CoffeeIcon.vue';
+import CogIcon from './icons/CogIcon.vue';
+import FactoryIcon from './icons/FactoryIcon.vue';
+import MallIcon from './icons/MallIcon.vue';
+import PigIcon from './icons/PigIcon.vue';
+import SuitcaseIcon from './icons/SuitcaseIcon.vue';
+import WheatIcon from './icons/WheatIcon.vue';
 import { CardColor, CardSymbol as SymbolEnum } from '~/utils/cards';
-import TowerIcon from '~/components/icons/TowerIcon.vue';
 
 const CardSymbolProps = Vue.extend({
     props: {
@@ -46,7 +54,17 @@ const CardSymbolProps = Vue.extend({
 });
 
 @Component({
-    components: { TowerIcon }
+    components: {
+        BoatIcon,
+        CoffeeIcon,
+        CogIcon,
+        FactoryIcon,
+        MallIcon,
+        PigIcon,
+        SuitcaseIcon,
+        TowerIcon,
+        WheatIcon
+    }
 })
 export default class CardSymbol extends CardSymbolProps {
     readonly symbols = SymbolEnum;
