@@ -1,0 +1,59 @@
+<template lang="pug">
+    a-row
+        a-row
+            h2 {{ player.name }}
+        a-row
+            p Peníze: {{ player.money }}
+        a-row
+            a-row(type="flex" justify="start" :gutter=16 v-for="(row, rowIndex) in playerCards" :key="rowIndex")
+                Card(v-for="(card, index) in row" :info="card" :key="index" :location="cardLocation.OtherPlayer")
+</template>
+
+<script lang="ts">
+import { Component, Vue } from 'vue-property-decorator';
+import Card from './Card.vue';
+import { CardCount } from '~/utils/interfaces/events/game/input.interface';
+import { CardColor, CardLocation } from '~/utils/cards';
+
+// TODO: duplicate in game/index.vue
+interface Player {
+    id: number;
+    socketId: string;
+    name: string;
+
+    cards: CardCount[];
+    money: number;
+    winningCards: CardCount[];
+}
+
+const PlayerCardProps = Vue.extend({
+    props: {
+        player: {
+            required: true,
+            type: Object as () => Player
+        }
+    }
+});
+
+@Component({
+    components: {
+        Card
+    }
+})
+export default class PlayerCards extends PlayerCardProps {
+    cardLocation = CardLocation;
+
+    get playerCards (): CardCount[][] {
+        const avg = (dice: number[]) => (dice.reduce((acc, cur) => acc + cur, 0) / (dice.length || 1));
+        const cards = [];
+        cards.push([...this.player.winningCards]);
+        cards.push([...this.player.cards.filter(({ card }) => card.color === CardColor.Red || card.color === CardColor.Blue).sort((a, b) => avg(a.card.triggerNumbers) - avg(b.card.triggerNumbers))]);
+        cards.push([...this.player.cards.filter(({ card }) => card.color === CardColor.Green || card.color === CardColor.Purple).sort((a, b) => avg(a.card.triggerNumbers) - avg(b.card.triggerNumbers))]);
+        return cards;
+    }
+}
+</script>
+
+<style scoped>
+
+</style>

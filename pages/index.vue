@@ -1,5 +1,16 @@
 <template lang="pug">
     div.container
+        // - a-modal(title="Close this dialog"
+        // -    :visible="dv"
+        // -    :closable="false"
+        // -    :maskClosable="false"
+        // -    :cancelButtonProps="{ props: { disabled: true } }"
+        // -    :keyboard="false"
+        // -    okText="Confirm"
+        // -    cancelText="Nah fuck you"
+        // -    @ok="dialogOk"
+        // -    @cancel="dialogCancel")
+        // -    | Try me bitch
         div
             logo
             h1.title client
@@ -8,6 +19,7 @@
                 a(href="https://nuxtjs.org/", target="_blank", class="button--green") Documentation
                 a(href="https://github.com/nuxt/nuxt.js", target="_blank", class="button--grey") GitHub
                 nuxt-link(to="/lobby", class="button--grey") Game lobby
+                nuxt-link(to="/game", class="button--grey") Game
 </template>
 
 <script lang="ts">
