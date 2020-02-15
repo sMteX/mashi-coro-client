@@ -1157,6 +1157,10 @@ export default class GamePage extends Vue {
             .on(events.input.PLAYER_WON_GAME, ({ playerId }: PlayerWonGame) => {
                 alert(`${this.playerName(playerId)} vyhrál hru!`);
                 // TODO: something
+            })
+            .on(events.input.GAME_ENDED_EMPTY, () => {
+                alert('Všichni ostatní hráči odešli, hra končí.');
+                // TODO: something
             });
     }
 
