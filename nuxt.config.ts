@@ -2,7 +2,7 @@ import { Configuration } from '@nuxt/types';
 const config = require('config');
 
 const client: { host: string; port: number } = config.get('client');
-const server: { host: string; port: number } = config.get('server');
+const server: { protocol: string; host: string; port: number } = config.get('server');
 
 const nuxtConfig: Configuration = {
     /*
@@ -15,7 +15,7 @@ const nuxtConfig: Configuration = {
     },
     mode: 'universal',
     env: {
-        serverUrl: `http://${server.host}:${server.port}`
+        serverUrl: `${server.protocol}://${server.host}:${server.port}`
     },
     /*
      ** Host and port config

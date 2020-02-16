@@ -1,6 +1,7 @@
 {
     "server": {
-        "host": "https://mashi-coro-server.herokuapp.com",
+        "protocol": "https",
+        "host": "mashi-coro-server.herokuapp.com",
         "port": 443
     }
 }

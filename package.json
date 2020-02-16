@@ -4,6 +4,10 @@
     "description": "Client for Mashi Coro game",
     "author": "Stuchlík Lukáš",
     "private": true,
+    "engines": {
+        "node": "13.x",
+        "yarn": "1.21.x"
+    },
     "scripts": {
         "dev": "nuxt-ts",
         "build": "nuxt-ts build",
