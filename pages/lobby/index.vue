@@ -164,8 +164,8 @@ export default class LobbyPage extends Vue {
             slug: this.gameDialog.result
         });
 
-        if (!validGame) {
-            this.gameDialog.error = 'Nesprávný kód hry.';
+        if (!validGame.success) {
+            this.gameDialog.error = (validGame.full) ? 'Hra je již plná.' : 'Nesprávný kód hry.';
             return;
         }
 
@@ -185,11 +185,19 @@ export default class LobbyPage extends Vue {
         this.socket.emit(events.output.PLAYER_ENTER, {
             playerName: this.joinNameDialog.result,
             game: this.gameSlug
-        }, ({ id }: PlayerEnteredLobby) => this.selfId = id);
-        this.socket.emit(events.output.GET_PLAYERS, {
-            game: this.gameSlug
-        }, (players: PlayerPair[]) => {
-            this.players = [...players];
+        }, (result: PlayerEnteredLobby) => {
+            if (!result) {
+                // game is already full
+                this.$message.error('Hra už je plná.');
+                this.gameSlug = '';
+                return;
+            }
+            this.selfId = result.id;
+            this.socket.emit(events.output.GET_PLAYERS, {
+                game: this.gameSlug
+            }, (players: PlayerPair[]) => {
+                this.players = [...players];
+            });
         });
     }
 
