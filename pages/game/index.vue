@@ -1149,9 +1149,13 @@ export default class GamePage extends Vue {
                 this.activePlayerId = newPlayer;
                 this.resetDefaultValues();
             })
-            .on(events.input.PLAYER_LEFT_GAME, ({ playerId }: PlayerLeftGame) => {
+            .on(events.input.PLAYER_LEFT_GAME, ({ playerId, newPlayer }: PlayerLeftGame) => {
                 this.log(`${this.playerName(playerId)} opustil hru.`, true);
                 // TODO: fix? broken?
+                if (newPlayer !== undefined) {
+                    this.log(`${this.playerName(playerId)} opustil hru. Jelikož byl právě na tahu, novým hráčem je ${this.playerName(newPlayer)}.`, true);
+                    this.activePlayerId = newPlayer;
+                }
                 this.players = this.players.filter(p => p.id !== playerId);
             })
             .on(events.input.PLAYER_WON_GAME, ({ playerId }: PlayerWonGame) => {

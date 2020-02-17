@@ -96,6 +96,7 @@ export interface NewTurn {
 }
 export interface PlayerLeftGame {
     playerId: number;
+    newPlayer?: number; // if currently playing player left game = new player
 }
 export interface PlayerWonGame {
     playerId: number;

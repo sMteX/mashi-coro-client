@@ -12,7 +12,6 @@ export const events = {
         output: {
             PLAYER_ENTER: 'playerEnter',
             PLAYER_READY_STATUS: 'playerReadyStatus',
-            PLAYER_LEFT: 'playerLeft',
             GET_PLAYERS: 'getPlayers',
             START_GAME: 'startGame'
         }
