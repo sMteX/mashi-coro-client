@@ -1159,12 +1159,15 @@ export default class GamePage extends Vue {
                 this.players = this.players.filter(p => p.id !== playerId);
             })
             .on(events.input.PLAYER_WON_GAME, ({ playerId }: PlayerWonGame) => {
+                this.socket.disconnect();
                 alert(`${this.playerName(playerId)} vyhrál hru!`);
-                // TODO: something
+                // TODO: "play again" kinda lobby
+                this.$router.push({ path: '/lobby' });
             })
             .on(events.input.GAME_ENDED_EMPTY, () => {
+                this.socket.disconnect();
                 alert('Všichni ostatní hráči odešli, hra končí.');
-                // TODO: something
+                this.$router.push({ path: '/lobby' });
             });
     }
 
