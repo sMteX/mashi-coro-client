@@ -16,7 +16,7 @@
                 a-radio(v-for="(player, index) in tvStudioModalTargets"
                         :key="index"
                         :value="player.id")
-                    | {{ player.name }} - {{ player.money }} mincí
+                    | {{ player.name }} - {{ formatCoins(player.money, true) }}
         a-modal(v-if="loaded"
             title="Kancelářská budova"
             :visible="officeBuildingModalVisible"
@@ -164,15 +164,6 @@ interface ActionButton {
 }
 
 const dominants = [CardName.Station, CardName.ShoppingCenter, CardName.AmusementPark, CardName.Transmitter];
-const formatCoins = (coins: number) => {
-    if (coins === 1) {
-        return `${coins} minci`;
-    }
-    if (coins >= 2 && coins <= 4) {
-        return `${coins} mince`;
-    }
-    return `${coins} mincí`;
-};
 
 @Component({
     components: {
@@ -264,6 +255,19 @@ export default class GamePage extends Vue {
             game: this.gameSlug,
             id: Number(this.$route.query.playerId)
         });
+    }
+
+    formatCoins (coins: number, nominative: boolean = false) {
+        if (coins === 1) {
+            if (nominative) {
+                return `${coins} mince`;
+            }
+            return `${coins} minci`;
+        }
+        if (coins >= 2 && coins <= 4) {
+            return `${coins} mince`;
+        }
+        return `${coins} mincí`;
     }
 
     get isPlayerOnTurn (): boolean {
@@ -468,7 +472,9 @@ export default class GamePage extends Vue {
         if (display) {
             this.$message.info(message, 5);
         }
-        console.log(message);
+        if (process.env.NODE_ENV === 'development') {
+            console.log(message);
+        }
     }
 
     findPlayer (id: number|string) {
@@ -1022,7 +1028,8 @@ export default class GamePage extends Vue {
                 this.dice.second = second;
                 this.dice.sum = data.sum;
 
-                if (this.isPlayerOnTurn && !this.playerHasCard(this.thisPlayer, CardName.Transmitter)) {
+                const hasTransmitter = this.playerHasCard(this.thisPlayer, CardName.Transmitter);
+                if (this.isPlayerOnTurn && ((!hasTransmitter) || (hasTransmitter && this.alreadyUsedTransmitter))) {
                     // TODO: handle Port
                     this.socket.emit(events.output.END_ROLL, {
                         game: this.gameSlug,
@@ -1046,7 +1053,7 @@ export default class GamePage extends Vue {
                 Object.entries(data.result).forEach(([id, result]) => {
                     if (result.gains !== undefined && result.gains > 0) {
                         // someone stole something from player, show
-                        strings.push(`${this.playerName(id)} získává ${formatCoins(result.gains)} od ${this.playerName(data.fromPlayer)} a má nyní ${formatCoins(result.newMoney)}.`);
+                        strings.push(`${this.playerName(id)} získává ${this.formatCoins(result.gains)} od ${this.playerName(data.fromPlayer)} a má nyní ${this.formatCoins(result.newMoney)}.`);
                     }
                     const p = this.findPlayer(Number(id));
                     p.money = result.newMoney;
@@ -1060,7 +1067,7 @@ export default class GamePage extends Vue {
                 const strings: string[] = [];
                 Object.entries(data.result).forEach(([id, result]) => {
                     if (result.gains > 0) {
-                        strings.push(`${this.playerName(id)} získává ${formatCoins(result.gains)} a má nyní ${formatCoins(result.newMoney)}.`);
+                        strings.push(`${this.playerName(id)} získává ${this.formatCoins(result.gains)} a má nyní ${this.formatCoins(result.newMoney)}.`);
                     }
                     const p = this.findPlayer(Number(id));
                     p.money = result.newMoney;
@@ -1071,7 +1078,7 @@ export default class GamePage extends Vue {
             })
             .on(events.input.GREEN_CARD_EFFECTS, (data: GreenCardEffects) => {
                 if (data.gains > 0) {
-                    this.log(`Zelené karty: ${this.playerName(data.player)} získává ${formatCoins(data.gains)} a má nyní ${formatCoins(data.newMoney)}.`, true);
+                    this.log(`Zelené karty: ${this.playerName(data.player)} získává ${this.formatCoins(data.gains)} a má nyní ${this.formatCoins(data.newMoney)}.`, true);
                 }
                 const p = this.findPlayer(data.player);
                 p.money = data.newMoney;
@@ -1090,7 +1097,7 @@ export default class GamePage extends Vue {
                 Object.entries(data.result).forEach(([id, result]) => {
                     if (result.gains !== undefined && result.gains > 0) {
                         // someone stole something from player, show
-                        this.log(`Fialové karty: ${this.playerName(data.player)} získává ${formatCoins(result.gains)} od ostatních hráčů a má nyní ${formatCoins(result.newMoney)}.`, true);
+                        this.log(`Fialové karty: ${this.playerName(data.player)} získává ${this.formatCoins(result.gains)} od ostatních hráčů a má nyní ${this.formatCoins(result.newMoney)}.`, true);
                     }
                     const p = this.findPlayer(Number(id));
                     p.money = result.newMoney;
@@ -1119,7 +1126,7 @@ export default class GamePage extends Vue {
                         const typedResult = result as TelevisionStudioEffect;
                         this.findPlayer(typedResult.currentPlayerId).money = typedResult.currentPlayerMoney;
                         this.findPlayer(typedResult.targetPlayerId).money = typedResult.targetPlayerMoney;
-                        this.log(`Fialové karty: ${this.playerName(typedResult.currentPlayerId)} získává ${formatCoins(typedResult.gain)} od ${this.playerName(typedResult.targetPlayerId)} a má nyní ${formatCoins(typedResult.currentPlayerMoney)}.`, true);
+                        this.log(`Fialové karty: ${this.playerName(typedResult.currentPlayerId)} získává ${this.formatCoins(typedResult.gain)} od ${this.playerName(typedResult.targetPlayerId)} a má nyní ${this.formatCoins(typedResult.currentPlayerMoney)}.`, true);
                     }
                 });
             })
@@ -1136,7 +1143,10 @@ export default class GamePage extends Vue {
                 this.addCardToPlayer(player, data.card, true);
 
                 // remove from table
+                console.log('Player bought card: ', data.card);
+                console.log('Buyable cards', this.table.buyableCards);
                 const card = this.table.buyableCards.find(cc => cc.card.cardName === data.card)!;
+                console.log('card', card);
                 card.count -= 1;
                 if (card.count === 0) {
                     this.table.buyableCards = this.table.buyableCards.filter(cc => cc.card.cardName !== data.card);
