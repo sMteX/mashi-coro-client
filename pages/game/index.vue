@@ -111,7 +111,7 @@ import {
     PlayerBoughtCard,
     PlayerLeftGame,
     PlayerWonGame,
-    RedCardEffects, StadiumEffect
+    RedCardEffects, TelevisionStudioEffect
 } from '~/utils/interfaces/events/game/input.interface';
 import PlayerCards from '~/components/PlayerCards.vue';
 import Card from '~/components/Card.vue';
@@ -164,6 +164,15 @@ interface ActionButton {
 }
 
 const dominants = [CardName.Station, CardName.ShoppingCenter, CardName.AmusementPark, CardName.Transmitter];
+const formatCoins = (coins: number) => {
+    if (coins === 1) {
+        return `${coins} minci`;
+    }
+    if (coins >= 2 && coins <= 4) {
+        return `${coins} mince`;
+    }
+    return `${coins} mincí`;
+};
 
 @Component({
     components: {
@@ -1005,8 +1014,9 @@ export default class GamePage extends Vue {
                 this.started = true;
             })
             .on(events.input.DICE_ROLL_OUTPUT, (data: DiceRollOutput) => {
-                this.log(`${this.playerName(data.player)} hodil ${data.transmitter ? 'znovu ' : ''}tyto kostky: ${data.dice.join(', ')}`);
+                this.log(`${this.playerName(data.player)} hodil/a ${data.transmitter ? 'znovu ' : ''}tyto kostky: ${data.dice.join(', ')}`);
                 this.currentTurnPhase = TurnPhase.PostRoll;
+                this.chosenAmountOfDice = data.dice.length;
                 const [first, second] = data.dice;
                 this.dice.first = first;
                 this.dice.second = second;
@@ -1023,7 +1033,7 @@ export default class GamePage extends Vue {
             .on(events.input.FINAL_DICE_ROLL, (data: DiceRollOutput) => {
                 if (this.playerHasCard(this.findPlayer(data.player), CardName.Transmitter)) {
                     // only if player has Transmitter and actually CAN change their mind, show this message
-                    this.log(`Konečný hod hráče ${this.playerName(data.player)} je ${data.dice.join(', ')}`, true);
+                    this.log(`Konečný hod ${this.playerName(data.player)} je ${data.dice.join(', ')}`, true);
                 }
                 const [first, second] = data.dice;
                 this.dice.first = first;
@@ -1036,7 +1046,7 @@ export default class GamePage extends Vue {
                 Object.entries(data.result).forEach(([id, result]) => {
                     if (result.gains !== undefined && result.gains > 0) {
                         // someone stole something from player, show
-                        strings.push(`${this.playerName(id)} získává ${result.gains} mincí od ${this.playerName(data.fromPlayer)} a má nyní ${result.newMoney} mincí.`);
+                        strings.push(`${this.playerName(id)} získává ${formatCoins(result.gains)} od ${this.playerName(data.fromPlayer)} a má nyní ${formatCoins(result.newMoney)}.`);
                     }
                     const p = this.findPlayer(Number(id));
                     p.money = result.newMoney;
@@ -1050,8 +1060,7 @@ export default class GamePage extends Vue {
                 const strings: string[] = [];
                 Object.entries(data.result).forEach(([id, result]) => {
                     if (result.gains > 0) {
-                        // someone stole something from player, show
-                        strings.push(`${this.playerName(id)} získává ${result.gains} mincí a má nyní ${result.newMoney} mincí.`);
+                        strings.push(`${this.playerName(id)} získává ${formatCoins(result.gains)} a má nyní ${formatCoins(result.newMoney)}.`);
                     }
                     const p = this.findPlayer(Number(id));
                     p.money = result.newMoney;
@@ -1062,7 +1071,7 @@ export default class GamePage extends Vue {
             })
             .on(events.input.GREEN_CARD_EFFECTS, (data: GreenCardEffects) => {
                 if (data.gains > 0) {
-                    this.log(`${this.playerName(data.player)} získává ${data.gains} mincí a má nyní ${data.newMoney} mincí.`, true);
+                    this.log(`Zelené karty: ${this.playerName(data.player)} získává ${formatCoins(data.gains)} a má nyní ${formatCoins(data.newMoney)}.`, true);
                 }
                 const p = this.findPlayer(data.player);
                 p.money = data.newMoney;
@@ -1081,7 +1090,7 @@ export default class GamePage extends Vue {
                 Object.entries(data.result).forEach(([id, result]) => {
                     if (result.gains !== undefined && result.gains > 0) {
                         // someone stole something from player, show
-                        this.log(`Fialové karty: ${this.playerName(data.player)} získává ${result.gains} mincí od ostatních hráčů a má nyní ${result.newMoney} mincí.`, true);
+                        this.log(`Fialové karty: ${this.playerName(data.player)} získává ${formatCoins(result.gains)} od ostatních hráčů a má nyní ${formatCoins(result.newMoney)}.`, true);
                     }
                     const p = this.findPlayer(Number(id));
                     p.money = result.newMoney;
@@ -1105,12 +1114,12 @@ export default class GamePage extends Vue {
 
                         this.removeCardFromPlayer(targetPlayer, typedResult.swapCardTarget);
                         this.addCardToPlayer(sourcePlayer, typedResult.swapCardTarget, false);
-                        this.log(`${sourcePlayer.name} vyměnil svoji kartu ${this.cardName(typedResult.swapCardOwn)} za ${this.cardName(typedResult.swapCardTarget)} od ${targetPlayer.name}.`, true);
-                    } else if (cardEnum === CardName.Stadium) {
-                        const typedResult = result as StadiumEffect;
+                        this.log(`Fialové karty: ${sourcePlayer.name} vyměnil/a svoji kartu ${this.cardName(typedResult.swapCardOwn)} za ${this.cardName(typedResult.swapCardTarget)} od ${targetPlayer.name}.`, true);
+                    } else if (cardEnum === CardName.TelevisionStudio) {
+                        const typedResult = result as TelevisionStudioEffect;
                         this.findPlayer(typedResult.currentPlayerId).money = typedResult.currentPlayerMoney;
                         this.findPlayer(typedResult.targetPlayerId).money = typedResult.targetPlayerMoney;
-                        this.log(`${this.playerName(typedResult.currentPlayerId)} získává ${typedResult.gain} mincí od ${this.playerName(typedResult.targetPlayerId)} a má nyní ${typedResult.currentPlayerMoney} mincí.`, true);
+                        this.log(`Fialové karty: ${this.playerName(typedResult.currentPlayerId)} získává ${formatCoins(typedResult.gain)} od ${this.playerName(typedResult.targetPlayerId)} a má nyní ${formatCoins(typedResult.currentPlayerMoney)}.`, true);
                     }
                 });
             })
@@ -1121,7 +1130,7 @@ export default class GamePage extends Vue {
                 this.currentTurnPhase = TurnPhase.Build;
             })
             .on(events.input.PLAYER_BOUGHT_CARD, (data: PlayerBoughtCard) => {
-                this.log(`${this.playerName(data.player)} si koupil kartu ${this.cardName(data.card)}.`, true);
+                this.log(`${this.playerName(data.player)} si koupil/a kartu ${this.cardName(data.card)}.`, true);
 
                 const player = this.findPlayer(data.player);
                 this.addCardToPlayer(player, data.card, true);
@@ -1136,31 +1145,31 @@ export default class GamePage extends Vue {
                 this.currentTurnPhase = TurnPhase.EndTurn;
             })
             .on(events.input.AIRPORT_GAIN, ({ player }: AirportGain) => {
-                this.log(`${this.playerName(player)} nic nepostavil, dostane 10 mincí za Letiště.`, true);
+                this.log(`${this.playerName(player)} nic nepostavil/a, dostane 10 mincí za Letiště.`, true);
                 const p = this.findPlayer(player);
                 p.money += 10;
             })
             .on(events.input.AMUSEMENT_PARK_NEW_TURN, ({ player }: AmusementParkNewTurn) => {
-                this.log(`${this.playerName(player)} hodil 2 stejné kostky, získává nový tah díky Zábavnímu parku.`, true);
+                this.log(`${this.playerName(player)} hodil/a 2 stejné kostky, získává nový tah díky Zábavnímu parku.`, true);
                 this.resetDefaultValues();
             })
             .on(events.input.NEW_TURN, ({ oldPlayer, newPlayer }: NewTurn) => {
-                this.log(`${this.playerName(oldPlayer)} ukončil tah, nový hráč: ${this.playerName(newPlayer)}.`, true);
+                this.log(`${this.playerName(oldPlayer)} ukončil/a tah, nový hráč: ${this.playerName(newPlayer)}.`, true);
                 this.activePlayerId = newPlayer;
                 this.resetDefaultValues();
             })
             .on(events.input.PLAYER_LEFT_GAME, ({ playerId, newPlayer }: PlayerLeftGame) => {
-                this.log(`${this.playerName(playerId)} opustil hru.`, true);
+                this.log(`${this.playerName(playerId)} opustil/a hru.`, true);
                 // TODO: fix? broken?
                 if (newPlayer !== undefined) {
-                    this.log(`${this.playerName(playerId)} opustil hru. Jelikož byl právě na tahu, novým hráčem je ${this.playerName(newPlayer)}.`, true);
+                    this.log(`${this.playerName(playerId)} opustil/a hru. Jelikož byl/a právě na tahu, novým hráčem je ${this.playerName(newPlayer)}.`, true);
                     this.activePlayerId = newPlayer;
                 }
                 this.players = this.players.filter(p => p.id !== playerId);
             })
             .on(events.input.PLAYER_WON_GAME, ({ playerId }: PlayerWonGame) => {
                 this.socket.disconnect();
-                alert(`${this.playerName(playerId)} vyhrál hru!`);
+                alert(`${this.playerName(playerId)} vyhrál/a hru!`);
                 // TODO: "play again" kinda lobby
                 this.$router.push({ path: '/lobby' });
             })

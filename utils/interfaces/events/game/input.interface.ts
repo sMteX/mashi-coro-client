@@ -63,7 +63,7 @@ export interface PassivePurpleCardEffects {
     }
 }
 export interface ActivePurpleCardEffects {
-    results: { [card in CardName]?: OfficeBuildingEffect|StadiumEffect; }
+    results: { [card in CardName]?: OfficeBuildingEffect|TelevisionStudioEffect; }
 }
 // subtypes for ActivePurpleCardEffects
 export interface OfficeBuildingEffect {
@@ -72,7 +72,7 @@ export interface OfficeBuildingEffect {
     swapCardOwn: CardName;
     swapCardTarget: CardName;
 }
-export interface StadiumEffect {
+export interface TelevisionStudioEffect {
     currentPlayerId: number;
     targetPlayerId: number;
     currentPlayerMoney: number;
