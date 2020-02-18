@@ -262,16 +262,6 @@ export default class LobbyPage extends Vue {
         this.self.ready = false;
     }
 
-    simulateCloseTab () {
-        // TODO: if during the ready check, emit that player left
-        this.socket.emit(events.output.PLAYER_LEFT, {
-            game: this.gameSlug
-        });
-        this.players = [];
-        this.gameSlug = '';
-        this.messages = [];
-    }
-
     startGame () {
         this.socket.emit(events.output.START_GAME, {
             game: this.gameSlug
@@ -311,6 +301,7 @@ export default class LobbyPage extends Vue {
                 }
             })
             .on(events.input.GAME_STARTED, () => {
+                this.socket.disconnect();
                 this.$router.push({
                     path: '/game',
                     query: {
