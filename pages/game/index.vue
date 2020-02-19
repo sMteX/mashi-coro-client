@@ -1142,14 +1142,13 @@ export default class GamePage extends Vue {
                 const player = this.findPlayer(data.player);
                 this.addCardToPlayer(player, data.card, true);
 
-                // remove from table
-                console.log('Player bought card: ', data.card);
-                console.log('Buyable cards', this.table.buyableCards);
-                const card = this.table.buyableCards.find(cc => cc.card.cardName === data.card)!;
-                console.log('card', card);
-                card.count -= 1;
-                if (card.count === 0) {
-                    this.table.buyableCards = this.table.buyableCards.filter(cc => cc.card.cardName !== data.card);
+                if (!dominants.includes(data.card)) {
+                    // remove from table
+                    const card = this.table.buyableCards.find(cc => cc.card.cardName === data.card)!;
+                    card.count -= 1;
+                    if (card.count === 0) {
+                        this.table.buyableCards = this.table.buyableCards.filter(cc => cc.card.cardName !== data.card);
+                    }
                 }
 
                 this.currentTurnPhase = TurnPhase.EndTurn;
