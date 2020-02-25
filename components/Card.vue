@@ -1,44 +1,3 @@
-<template lang="pug">
-    a-popover
-        template(slot="content")
-            // - dominant closeup
-            div.card(v-if="info.card.color === cardColor.Dominant")
-                div.inner(:class="backgroundClass")
-                    a-row.name(type="flex" justify="center")
-                        CardSymbol(:symbol="info.card.symbol" :color="info.card.color" :bought="info.card.bought")
-                        | {{ info.card.name }}
-                    a-row.empty-space
-                    a-row.text-center.bottom-row(type="flex" align="middle")
-                        a-col(span=6) {{ info.card.cost }}
-                        a-col(span=18)
-                            CardDescription(:text="info.card.description")
-            // - closeup
-            div.card(v-else)
-                div.inner(:class="backgroundClass")
-                    a-row(type="flex" justify="center") {{ info.card.triggerNumbers.join(', ') }}
-                    a-row.name(type="flex" justify="center")
-                        CardSymbol(:symbol="info.card.symbol" :color="info.card.color")
-                        | {{ info.card.name }}
-                    a-row.empty-space
-                    a-row.text-center.bottom-row
-                        a-col(span=6)
-                            a-row
-                                MultiPlayerIcon(v-if="triggeredByAll")
-                                SinglePlayerIcon(v-else)
-                            a-row {{ info.card.cost }}
-                        a-col(span=18)
-                            a-row
-                                CardDescription(:text="info.card.description")
-        // - miniature
-        div.card-stack
-            div(v-for="index in info.count-1" :class="`card_${index}`" :key="index")
-            div.card-miniature(:class="{ clickable }" @click="triggerClick")
-                a-row.inner(type="flex" justify="center" align="middle" :class="backgroundClass")
-                    div.text-center(v-if="info.card.color !== 4") {{ info.card.triggerNumbers.join(', ') }}
-                    div.miniature-name.text-center {{ info.card.name }}
-                    div.text-center(v-if="location !== cardLocation.OtherPlayer && !info.card.bought") {{ info.card.cost }}
-</template>
-
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import MultiPlayerIcon from './icons/MultiPlayerIcon.vue';
@@ -66,6 +25,7 @@ const cardBackgroundMap = {
 };
 
 const CardProps = Vue.extend({
+    functional: true,
     props: {
         clickable: {
             required: false,
@@ -91,33 +51,180 @@ const CardProps = Vue.extend({
     }
 });
 
-@Component({
-    components: {
-        MultiPlayerIcon,
-        SinglePlayerIcon,
-        CardDescription,
-        CardSymbol
-    }
-})
+@Component
 export default class Card extends CardProps {
-    cardColor = CardColor;
-    cardLocation = CardLocation;
+    render (h: Vue.CreateElement, { props }: Vue.RenderContext) {
+        const { info: _info, clickable, clickEvent, location: _location } = props;
+        const info = _info as CardCount;
+        const location = _location as CardLocation;
 
-    triggerClick () {
-        if (this.clickable && this.clickEvent) {
-            this.clickEvent(this.info.card.cardName);
-        }
-    }
+        const div = (classes: (string|[string, boolean])[], children: any[], extraData?: object) => {
+            const c: {[c: string]: boolean} = {};
+            classes.forEach((cl) => {
+                if (typeof cl === 'string') {
+                    c[cl] = true;
+                } else {
+                    const [name, val] = cl;
+                    c[name] = val;
+                }
+            });
+            return h('div', { class: c, ...extraData }, [...children]);
+        };
+        const row = (classes: (string|[string, boolean])[], props: object, children: any[], extraData?: object) => {
+            const c: {[c: string]: boolean} = {};
+            classes.forEach((cl) => {
+                if (typeof cl === 'string') {
+                    c[cl] = true;
+                } else {
+                    const [name, val] = cl;
+                    c[name] = val;
+                }
+            });
+            return h('a-row', { class: c, props, ...extraData }, [...children]);
+        };
+        const col = (span: number, children: any[]) =>
+            h('a-col', { props: { span } }, [...children]);
 
-    get triggeredByAll (): boolean {
-        return this.info.card.color === CardColor.Blue || this.info.card.color === CardColor.Red;
-    }
+        const miniature = () => {
+            const cardStack = [];
+            // card stack
+            for (let i = 1; i < info.count; i += 1) {
+                cardStack.push(h('div', {
+                    class: { [`card_${i}`]: true },
+                    key: `${i}`
+                }));
+            }
+            const content = [];
+            // trigger numbers
+            if (info.card.color !== CardColor.Dominant) {
+                content.push(div(['text-center'], [info.card.triggerNumbers.join(', ')]));
+            }
+            // name
+            content.push(div(['miniature-name', 'text-center'], [info.card.name]));
+            // cost
+            if (location !== CardLocation.OtherPlayer && !info.card.bought) {
+                content.push(div(['text-center'], [`${info.card.cost}`]));
+            }
+            return div(
+                ['card-stack'],
+                [
+                    ...cardStack,
+                    div(
+                        ['card-miniature', ['clickable', clickable]],
+                        [row(
+                            ['inner', cardBackgroundMap[info.card.color]],
+                            { type: 'flex', justify: 'center', align: 'middle' },
+                            [...content]
+                        )],
+                        {
+                            on: {
+                                click () {
+                                    if (clickable && clickEvent) {
+                                        clickEvent(info.card.cardName);
+                                    }
+                                }
+                            }
+                        }
+                    )
+                ]
+            );
+        };
+        const dominantCloseup = () =>
+            // div.card
+            div(
+                ['card'],
+                [
+                    // div.inner
+                    div(
+                        ['inner', cardBackgroundMap[info.card.color]],
+                        [
+                            // a-row.name
+                            row(
+                                ['name'],
+                                { type: 'flex', justify: 'center' },
+                                [
+                                    h(CardSymbol, { props: { symbol: info.card.symbol, color: info.card.color, bought: info.card.bought } }),
+                                    info.card.name
+                                ]
+                            ),
+                            // a-row.empty-space
+                            h('a-row', { class: { 'empty-space': true } }),
+                            // a-row.text-center.bottom-row
+                            row(
+                                ['text-center', 'bottom-row'],
+                                { type: 'flex', align: 'middle' },
+                                [
+                                    col(6, [`${info.card.cost}`]),
+                                    col(18, [
+                                        h(CardDescription, { props: { text: info.card.description } })
+                                    ])
+                                ]
+                            )
+                        ]
+                    )
+                ]
+            );
 
-    get backgroundClass (): string {
-        if (this.info.card.color === CardColor.Dominant) {
-            return (this.info.card.bought) ? cssBackgrounds.winningActive : cssBackgrounds.winningInactive;
-        }
-        return cardBackgroundMap[this.info.card.color];
+        const closeup = () =>
+            // div.card
+            div(
+                ['card'],
+                [
+                    // div.inner
+                    div(
+                        ['inner', cardBackgroundMap[info.card.color]],
+                        [
+                            // a-row (trigger numbers)
+                            row(
+                                [],
+                                { type: 'flex', justify: 'center' },
+                                [info.card.triggerNumbers.join(', ')]
+                            ),
+                            // a-row.name
+                            row(
+                                ['name'],
+                                { type: 'flex', justify: 'center' },
+                                [
+                                    h(CardSymbol, { props: { symbol: info.card.symbol, color: info.card.color } }),
+                                    info.card.name
+                                ]
+                            ),
+                            // a-row.empty-space
+                            h('a-row', { class: { 'empty-space': true } }),
+                            // a-row.text-center.bottom-row
+                            row(
+                                ['text-center', 'bottom-row'],
+                                {},
+                                [
+                                    // player icon and cost
+                                    col(6, [
+                                        h('a-row', [
+                                            (info.card.color === CardColor.Blue || info.card.color === CardColor.Red)
+                                                ? h(MultiPlayerIcon) : h(SinglePlayerIcon)
+                                        ]),
+                                        h('a-row', [`${info.card.cost}`])
+                                    ]),
+                                    // description
+                                    col(18, [
+                                        h('a-row', [
+                                            h(CardDescription, { props: { text: info.card.description } })
+                                        ])
+                                    ])
+                                ]
+                            )
+                        ]
+                    )
+                ]
+            );
+
+        const chosenCloseup = (info.card.color === CardColor.Dominant) ? dominantCloseup : closeup;
+        return h(
+            'a-popover',
+            [
+                h('template', { slot: 'content' }, [chosenCloseup()]),
+                miniature()
+            ]
+        );
     }
 }
 </script>
