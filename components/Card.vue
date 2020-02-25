@@ -270,6 +270,7 @@ $colors: (
         text-align: center;
         font-size: 14px;
         z-index: 200;
+        animation: 0.25s appear;
 
         &::after {
             all: initial;
@@ -288,7 +289,14 @@ $colors: (
         }
     }
 }
-
+@keyframes appear {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
 .clickable {
     cursor: pointer;
 }
