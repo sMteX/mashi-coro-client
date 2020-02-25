@@ -218,10 +218,10 @@ export default class Card extends CardProps {
             );
 
         const chosenCloseup = (info.card.color === CardColor.Dominant) ? dominantCloseup : closeup;
-        return h(
-            'a-popover',
+        return div(
+            ['card-wrapper'],
             [
-                h('template', { slot: 'content' }, [chosenCloseup()]),
+                div(['tooltip'], [chosenCloseup()]),
                 miniature()
             ]
         );
@@ -245,6 +245,49 @@ $colors: (
     "winning-inactive-bg": #8a8a8a,
     "winning-active-bg": #fed233
 );
+// tooltips
+.card-wrapper {
+    .tooltip {
+        display: none;
+        width: auto !important;
+    }
+}
+.card-wrapper:hover {
+    position: relative;
+
+    .tooltip {
+        all: initial;
+        font-family: Arial, Helvetica, sans-serif;
+        display: inline-block;
+        border-radius: 5px;
+        color: #f9f9f9;
+        position: absolute;
+        bottom: 100%;
+        width: #{$card-width}px;
+        left: 50%;
+        transform: translate(-50%, 0);
+        margin-bottom: 15px;
+        text-align: center;
+        font-size: 14px;
+        z-index: 200;
+
+        &::after {
+            all: initial;
+            display: inline-block;
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 10px solid #1a1a1a;
+            position: absolute;
+            bottom: -15px;
+            content: '';
+            left: 50%;
+            transform: translate(-50%, 0);
+            margin-bottom: 5px;
+        }
+    }
+}
 
 .clickable {
     cursor: pointer;
