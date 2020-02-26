@@ -56,15 +56,16 @@
 </template>
 
 <script lang="ts">
-import { Vue, Component } from 'vue-property-decorator';
-import MachiKoroLogo from '~/components/MachiKoroLogo.vue';
-import { events as eventConstants } from '~/utils/constants';
-import {
-    PlayerChangedReady,
-    PlayerEnteredLobby,
-    PlayerLeftLobby
-} from '~/utils/interfaces/events/lobby/input.interface';
-const io = require('socket.io-client');
+    import { Component, Vue } from 'vue-property-decorator';
+    import MachiKoroLogo from '~/components/MachiKoroLogo.vue';
+    import { events as eventConstants } from '~/utils/constants';
+    import {
+        PlayerChangedReady,
+        PlayerEnteredLobby,
+        PlayerLeftLobby
+    } from '~/utils/interfaces/events/lobby/input.interface';
+
+    const io = require('socket.io-client');
 
 const { lobby: events } = eventConstants;
 interface PlayerPair {
@@ -121,11 +122,28 @@ export default class LobbyPage extends Vue {
         error: ''
     };
 
+    async validate ({ app, params }) {
+        console.log('inside validate, params', params);
+        if (!params.slug) {
+            console.log('slug is empty');
+            return true;
+        }
+        console.log('slug: ', params.slug);
+        const validGame = await app.$axios.$post(`${process.env.serverUrl}/api/validateGame`, {
+            slug: params.slug
+        });
+        return validGame.success;
+    }
+
     mounted () {
         this.socket = io.connect(
             `${process.env.serverUrl}/${events.namespaceName}`
         );
         this.setupHandlers();
+
+        if (this.$route.params.slug) {
+            console.log('connect to game');
+        }
     }
 
     async createNameDialogOk () {

@@ -15,7 +15,7 @@ import Card from './Card.vue';
 import { CardCount } from '~/utils/interfaces/events/game/input.interface';
 import { CardColor, CardLocation } from '~/utils/cards';
 
-// TODO: duplicate in game/index.vue
+// TODO: duplicate in game/_slug.vue
 interface Player {
     id: number;
     socketId: string;
