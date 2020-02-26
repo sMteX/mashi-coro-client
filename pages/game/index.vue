@@ -58,9 +58,9 @@
                     a-row
                         h3 Kostky
                         div(:style="{ height: '50px' }")
-                            div(v-show="currentTurnPhase >= 2")
+                            div(v-show="currentTurnPhase >= 1")
                                 Dice(ref="dice1")
-                            div(v-show="currentTurnPhase >= 2 && chosenAmountOfDice === 2")
+                            div(v-show="currentTurnPhase >= 1 && chosenAmountOfDice === 2")
                                 Dice(ref="dice2")
                     a-row.delimiter
                     a-row
