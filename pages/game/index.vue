@@ -58,12 +58,10 @@
                     a-row
                         h3 Kostky
                         div(:style="{ height: '50px' }")
-                            div(v-show="currentTurnPhase >= 2 && chosenAmountOfDice === 1")
-                                p Kostka: {{ dice.first }}
+                            div(v-show="currentTurnPhase >= 2")
+                                Dice(ref="dice1")
                             div(v-show="currentTurnPhase >= 2 && chosenAmountOfDice === 2")
-                                p První kostka: {{ dice.first }}
-                                p Druhá kostka: {{ dice.second }}
-                                p Součet: {{ dice.sum }}
+                                Dice(ref="dice2")
                     a-row.delimiter
                     a-row
                         a-col(span=12)
@@ -116,6 +114,7 @@ import {
 import PlayerCards from '~/components/PlayerCards.vue';
 import Card from '~/components/Card.vue';
 import { Card as CardInterface, CardColor, CardLocation, CardName, CardSymbol } from '~/utils/cards';
+import Dice from '~/components/Dice.vue';
 
 const io = require('socket.io-client');
 const { game: events } = eventConstants;
@@ -170,7 +169,8 @@ const dominants = [CardName.Station, CardName.ShoppingCenter, CardName.Amusement
         MachiKoroLogo,
         Logo,
         Card,
-        PlayerCards
+        PlayerCards,
+        Dice
     },
     head: {
         title: 'Game'
@@ -272,6 +272,15 @@ export default class GamePage extends Vue {
 
     get isPlayerOnTurn (): boolean {
         return this.started && this.thisPlayer.id === this.activePlayerId;
+    }
+
+    rollDices (result1: number, result2?: number) {
+        // @ts-ignore
+        this.$refs.dice1.changeValue(10, result1);
+        if (result2) {
+            // @ts-ignore
+            this.$refs.dice2.changeValue(10, result2);
+        }
     }
 
     buyCard (card: CardName) {
@@ -1020,22 +1029,27 @@ export default class GamePage extends Vue {
                 this.started = true;
             })
             .on(events.input.DICE_ROLL_OUTPUT, (data: DiceRollOutput) => {
-                this.log(`${this.playerName(data.player)} hodil/a ${data.transmitter ? 'znovu ' : ''}tyto kostky: ${data.dice.join(', ')}`);
-                this.currentTurnPhase = TurnPhase.PostRoll;
                 this.chosenAmountOfDice = data.dice.length;
                 const [first, second] = data.dice;
                 this.dice.first = first;
                 this.dice.second = second;
                 this.dice.sum = data.sum;
+                this.rollDices(this.dice.first, this.dice.second);
 
-                const hasTransmitter = this.playerHasCard(this.thisPlayer, CardName.Transmitter);
-                if (this.isPlayerOnTurn && ((!hasTransmitter) || (hasTransmitter && this.alreadyUsedTransmitter))) {
-                    // TODO: handle Port
-                    this.socket.emit(events.output.END_ROLL, {
-                        game: this.gameSlug,
-                        playerId: this.thisPlayer.id
-                    });
-                }
+                setTimeout(() => {
+                    // roll animation should take around 1 second, show things AFTER the animation ends
+                    this.currentTurnPhase = TurnPhase.PostRoll;
+                    this.log(`${this.playerName(data.player)} hodil/a ${data.transmitter ? 'znovu ' : ''}tyto kostky: ${data.dice.join(', ')}`);
+
+                    const hasTransmitter = this.playerHasCard(this.thisPlayer, CardName.Transmitter);
+                    if (this.isPlayerOnTurn && ((!hasTransmitter) || (hasTransmitter && this.alreadyUsedTransmitter))) {
+                        // TODO: handle Port
+                        this.socket.emit(events.output.END_ROLL, {
+                            game: this.gameSlug,
+                            playerId: this.thisPlayer.id
+                        });
+                    }
+                }, 1100);
             })
             .on(events.input.FINAL_DICE_ROLL, (data: DiceRollOutput) => {
                 if (this.playerHasCard(this.findPlayer(data.player), CardName.Transmitter)) {
