@@ -311,7 +311,6 @@ export default class GamePage extends Vue {
         this.log('Hozeno jednou kostkou.');
         if (!this.dummySetup) {
             this.chosenAmountOfDice = 1;
-            this.currentTurnPhase = TurnPhase.DiceRoll;
             this.socket.emit(events.output.DICE_ROLL, {
                 game: this.gameSlug,
                 diceCount: 1,
@@ -325,7 +324,6 @@ export default class GamePage extends Vue {
         this.log('Hozeno dvěma kostkami.');
         if (!this.dummySetup) {
             this.chosenAmountOfDice = 2;
-            this.currentTurnPhase = TurnPhase.DiceRoll;
             this.socket.emit(events.output.DICE_ROLL, {
                 game: this.gameSlug,
                 diceCount: 2,
@@ -1029,6 +1027,7 @@ export default class GamePage extends Vue {
                 this.started = true;
             })
             .on(events.input.DICE_ROLL_OUTPUT, (data: DiceRollOutput) => {
+                this.currentTurnPhase = TurnPhase.DiceRoll;
                 this.chosenAmountOfDice = data.dice.length;
                 const [first, second] = data.dice;
                 this.dice.first = first;
