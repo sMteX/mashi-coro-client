@@ -9,7 +9,7 @@
             @cancel="hideDialog(createNameDialog)")
             a-alert(v-if="createNameDialog.error" type="error" :message="createNameDialog.error" showIcon)
             br
-            a-input(v-model="createNameDialog.temp")
+            a-input(v-model="createNameDialog.temp" autoFocus @pressEnter="createNameDialogOk")
         a-modal(:title="joinNameDialog.title"
             :visible="joinNameDialog.visible"
             okText="Potvrdit"
@@ -18,7 +18,7 @@
             @cancel="hideDialog(joinNameDialog)")
             a-alert(v-if="joinNameDialog.error" type="error" :message="joinNameDialog.error" showIcon)
             br
-            a-input(v-model="joinNameDialog.temp")
+            a-input(v-model="joinNameDialog.temp" autoFocus @pressEnter="joinNameDialogOk")
 
         a-col.game-container(span=14, offset=5)
             a-row(type="flex" justify="center")
