@@ -79,6 +79,9 @@ export interface TelevisionStudioEffect {
     targetPlayerMoney: number;
     gain: number;
 }
+export interface TownHallGain {
+    player: number;
+}
 // TODO: Water Treatment Effects
 export interface PlayerBoughtCard {
     player: number;

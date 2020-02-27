@@ -109,7 +109,7 @@ import {
     PlayerBoughtCard,
     PlayerLeftGame,
     PlayerWonGame,
-    RedCardEffects, TelevisionStudioEffect
+    RedCardEffects, TelevisionStudioEffect, TownHallGain
 } from '~/utils/interfaces/events/game/input.interface';
 import PlayerCards from '~/components/PlayerCards.vue';
 import Card from '~/components/Card.vue';
@@ -1142,6 +1142,11 @@ export default class GamePage extends Vue {
                         this.log(`Fialové karty: ${this.playerName(typedResult.currentPlayerId)} získává ${this.formatCoins(typedResult.gain)} od ${this.playerName(typedResult.targetPlayerId)} a má nyní ${this.formatCoins(typedResult.currentPlayerMoney)}.`, true);
                     }
                 });
+            })
+            .on(events.input.TOWN_HALL_GAIN, (data: TownHallGain) => {
+                this.log(`${this.playerName(data.player)} získává 1 minci za Radnici.`, true);
+                const player = this.findPlayer(data.player);
+                player.money += 1;
             })
             .on(events.input.BUILDING_POSSIBLE, () => {
                 if (this.isPlayerOnTurn) {
