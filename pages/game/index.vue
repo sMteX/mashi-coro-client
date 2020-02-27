@@ -96,14 +96,14 @@ import Logo from '~/components/Logo.vue';
 import MachiKoroLogo from '~/components/MachiKoroLogo.vue';
 import { events as eventConstants } from '~/utils/constants';
 import {
-    ActivePurpleCardEffects,
+    ActivePurpleCardEffects, AddedTwo,
     AirportGain,
     AmusementParkNewTurn,
     BlueCardEffects,
     CardCount,
     DiceRollOutput,
     GameDataLoad,
-    GreenCardEffects,
+    GreenCardEffects, ItCenterCoin,
     NewTurn, OfficeBuildingEffect,
     PassivePurpleCardEffects,
     PlayerBoughtCard,
@@ -148,6 +148,7 @@ interface Player {
     cards: CardCount[];
     money: number;
     winningCards: CardCount[];
+    itCenterCoins: number;
 }
 
 interface Table {
@@ -226,6 +227,7 @@ export default class GamePage extends Vue {
     private chosenAmountOfDice: number = 1;
     private activePlayerId: number = -1;
     private alreadyUsedTransmitter: boolean = false;
+    private alreadyUsedPort: boolean = false;
     private alreadyBought: boolean = false;
 
     private dice = {
@@ -238,6 +240,7 @@ export default class GamePage extends Vue {
         this.chosenAmountOfDice = 1;
         this.alreadyBought = false;
         this.alreadyUsedTransmitter = false;
+        this.alreadyUsedPort = false;
         this.currentTurnPhase = TurnPhase.DiceChoice;
     }
 
@@ -359,14 +362,31 @@ export default class GamePage extends Vue {
 
     addTwoToRoll () {
         this.log('Added 2 to roll');
-        // TODO: implement
+        if (!this.dummySetup) {
+            this.alreadyUsedPort = true;
+            this.socket.emit(events.output.ADD_TWO, {
+                game: this.gameSlug,
+                playerId: this.thisPlayer.id
+            });
+        }
     }
 
     endTurn () {
         this.log('Tah ukončen.');
         if (!this.dummySetup) {
-            // TODO: check for IT Center if player has it and has money (just a simple confirm - do you want to add a coin to this card before ending turn?)
+            let useItCenter = false;
+            if (this.playerHasCard(this.thisPlayer, CardName.ItCenter) && this.thisPlayer.money > 0) {
+                this.$confirm({
+                    title: 'IT centrum',
+                    content: `Chcete přidat jednu minci na IT centrum? Právě máte ${this.formatCoins(this.thisPlayer.money)}. Na kartě máte momentálně ${this.formatCoins(this.thisPlayer.itCenterCoins)}.`,
+                    onOk: () => {
+                        useItCenter = true;
+                    },
+                    onCancel () {}
+                });
+            }
             this.socket.emit(events.output.END_TURN, {
+                useItCenter,
                 game: this.gameSlug,
                 playerId: this.thisPlayer.id
             });
@@ -395,8 +415,7 @@ export default class GamePage extends Vue {
     }
 
     get isAddTwoToRollVisible (): boolean {
-        // TODO: if player has Dock dominant
-        return false;
+        return this.playerHasCard(this.thisPlayer, CardName.Port);
     }
 
     get isEndTurnVisible (): boolean {
@@ -426,14 +445,12 @@ export default class GamePage extends Vue {
     }
 
     get isAddTwoToRollActive (): boolean {
-        // TODO: active in PostRoll phase (after check for second roll and 10 - 12 in roll value)
-        return false;
+        // TODO: something with Transmitter?
+        return this.isPlayerOnTurn && this.currentTurnPhase === TurnPhase.PostRoll && this.dice.sum >= 10 && !this.alreadyUsedPort;
     }
 
     get isEndTurnActive (): boolean {
         return this.isPlayerOnTurn && this.currentTurnPhase > TurnPhase.PurpleCards;
-        // return this.currentTurnPhase === TurnPhase.PostBuild || this.currentTurnPhase === TurnPhase.EndTurn;
-        // return true;
     }
     // </editor-fold>
 
@@ -525,7 +542,7 @@ export default class GamePage extends Vue {
             // cardDb
             cardDb: {
                 [CardName.WheatField]: {
-                    cardName: 0,
+                    cardName: CardName.WheatField,
                     name: 'Pšeničné pole',
                     cost: 1,
                     description: 'Vezměte si 1 minci z banku',
@@ -536,7 +553,7 @@ export default class GamePage extends Vue {
                     ]
                 },
                 [CardName.Farm]: {
-                    cardName: 1,
+                    cardName: CardName.Farm,
                     name: 'Statek',
                     cost: 1,
                     description: 'Vezměte si 1 minci z banku',
@@ -547,7 +564,7 @@ export default class GamePage extends Vue {
                     ]
                 },
                 [CardName.Bakery]: {
-                    cardName: 2,
+                    cardName: CardName.Bakery,
                     name: 'Pekárna',
                     cost: 1,
                     description: 'Vezměte si 1 minci z banku',
@@ -559,7 +576,7 @@ export default class GamePage extends Vue {
                     ]
                 },
                 [CardName.CoffeeShop]: {
-                    cardName: 3,
+                    cardName: CardName.CoffeeShop,
                     name: 'Kavárna',
                     cost: 2,
                     description: 'Dostanete 1 minci od hráče na tahu',
@@ -570,7 +587,7 @@ export default class GamePage extends Vue {
                     ]
                 },
                 [CardName.Shop]: {
-                    cardName: 4,
+                    cardName: CardName.Shop,
                     name: 'Samoobsluha',
                     cost: 2,
                     description: 'Vezměte si 3 mince z banku',
@@ -581,7 +598,7 @@ export default class GamePage extends Vue {
                     ]
                 },
                 [CardName.Forest]: {
-                    cardName: 5,
+                    cardName: CardName.Forest,
                     name: 'Les',
                     cost: 3,
                     description: 'Vezměte si 1 minci z banku',
@@ -592,7 +609,7 @@ export default class GamePage extends Vue {
                     ]
                 },
                 [CardName.Stadium]: {
-                    cardName: 6,
+                    cardName: CardName.Stadium,
                     name: 'Stadión',
                     cost: 6,
                     description: 'Dostanete 2 mince od každého soupeře',
@@ -603,7 +620,7 @@ export default class GamePage extends Vue {
                     ]
                 },
                 [CardName.TelevisionStudio]: {
-                    cardName: 7,
+                    cardName: CardName.TelevisionStudio,
                     name: 'Televizní studio',
                     cost: 7,
                     description: 'Dostanete 5 mincí od zvoleného soupeře',
@@ -614,7 +631,7 @@ export default class GamePage extends Vue {
                     ]
                 },
                 [CardName.OfficeBuilding]: {
-                    cardName: 8,
+                    cardName: CardName.OfficeBuilding,
                     name: 'Kancelářská budova',
                     cost: 8,
                     description: `Můžete vyměnit jednu svoji kartu objektu za soupeřovu (nelze měnit #SYMBOL_${CardSymbol.Tower})`,
@@ -625,7 +642,7 @@ export default class GamePage extends Vue {
                     ]
                 },
                 [CardName.DairyShop]: {
-                    cardName: 9,
+                    cardName: CardName.DairyShop,
                     name: 'Mlékárna',
                     cost: 5,
                     description: `Za každý svůj objekt #SYMBOL_${CardSymbol.Pig} si vezměte 3 mince z banku.`,
@@ -636,7 +653,7 @@ export default class GamePage extends Vue {
                     ]
                 },
                 [CardName.FurnitureFactory]: {
-                    cardName: 10,
+                    cardName: CardName.FurnitureFactory,
                     name: 'Továrna na nábytek',
                     cost: 3,
                     description: `Za každý svůj objekt #SYMBOL_${CardSymbol.Cog} si vezměte 3 mince z banku`,
@@ -647,7 +664,7 @@ export default class GamePage extends Vue {
                     ]
                 },
                 [CardName.Mine]: {
-                    cardName: 11,
+                    cardName: CardName.Mine,
                     name: 'Důl',
                     cost: 6,
                     description: 'Vezměte si 5 mincí z banku',
@@ -658,7 +675,7 @@ export default class GamePage extends Vue {
                     ]
                 },
                 [CardName.ApplePark]: {
-                    cardName: 12,
+                    cardName: CardName.ApplePark,
                     name: 'Jabloňový sad',
                     cost: 3,
                     description: 'Vezměte si 3 mince z banku',
@@ -669,7 +686,7 @@ export default class GamePage extends Vue {
                     ]
                 },
                 [CardName.Restaurant]: {
-                    cardName: 13,
+                    cardName: CardName.Restaurant,
                     name: 'Restaurace',
                     cost: 3,
                     description: 'Dostanete 2 minci od hráče na tahu',
@@ -681,7 +698,7 @@ export default class GamePage extends Vue {
                     ]
                 },
                 [CardName.Mall]: {
-                    cardName: 14,
+                    cardName: CardName.Mall,
                     name: 'Obchodní dům',
                     cost: 2,
                     description: `Za každý svůj objekt #SYMBOL_${CardSymbol.Wheat} si vezměte 2 mince z banku`,
@@ -693,7 +710,7 @@ export default class GamePage extends Vue {
                     ]
                 },
                 [CardName.Station]: {
-                    cardName: 15,
+                    cardName: CardName.Station,
                     name: 'Nádraží',
                     cost: 4,
                     description: 'Můžete házet jednou nebo dvěma kostkami.',
@@ -702,7 +719,7 @@ export default class GamePage extends Vue {
                     triggerNumbers: []
                 },
                 [CardName.ShoppingCenter]: {
-                    cardName: 16,
+                    cardName: CardName.ShoppingCenter,
                     name: 'Nákupní centrum',
                     cost: 10,
                     description: `Dostáváte-li příjmy za objekty #SYMBOL_${CardSymbol.Coffee} nebo #SYMBOL_${CardSymbol.Box}, dostanete za každý z nich o 1 minci více.`,
@@ -711,7 +728,7 @@ export default class GamePage extends Vue {
                     triggerNumbers: []
                 },
                 [CardName.AmusementPark]: {
-                    cardName: 17,
+                    cardName: CardName.AmusementPark,
                     name: 'Zábavní park',
                     cost: 16,
                     description: 'Pokud vám při hodu dvěma kostkami padnou stejná čísla, máte tah navíc.',
@@ -720,7 +737,7 @@ export default class GamePage extends Vue {
                     triggerNumbers: []
                 },
                 [CardName.Transmitter]: {
-                    cardName: 18,
+                    cardName: CardName.Transmitter,
                     name: 'Vysílač',
                     cost: 22,
                     description: 'Jednou v každém tahu smíte znovu hodit kostkami.',
@@ -802,7 +819,8 @@ export default class GamePage extends Vue {
                     bought: false
                 },
                 count: 1
-            }))
+            })),
+            itCenterCoins: 0
         })));
         this.setupActionButtons();
         this.loaded = true;
@@ -1015,7 +1033,8 @@ export default class GamePage extends Vue {
                             bought: false
                         },
                         count: 1
-                    }))
+                    })),
+                    itCenterCoins: 0
                 })));
                 // has to be defined here, because getters are called before mounted()
                 // get buttons() iterates through _buttons and calls isVisible(), which puts us back at the start
@@ -1041,8 +1060,13 @@ export default class GamePage extends Vue {
                     this.log(`${this.playerName(data.player)} hodil/a ${data.transmitter ? 'znovu ' : ''}tyto kostky: ${data.dice.join(', ')}`);
 
                     const hasTransmitter = this.playerHasCard(this.thisPlayer, CardName.Transmitter);
-                    if (this.isPlayerOnTurn && ((!hasTransmitter) || (hasTransmitter && this.alreadyUsedTransmitter))) {
-                        // TODO: handle Port
+                    const hasPort = this.playerHasCard(this.thisPlayer, CardName.Port);
+                    const canUsePort = hasPort && this.dice.sum >= 10;
+                    if (this.isPlayerOnTurn && ((!hasTransmitter && !canUsePort) || (hasTransmitter && this.alreadyUsedTransmitter && !canUsePort))) {
+                        // automatically ends turn if player rolled dice and either:
+                        //  - doesn't have Transmitter and can't use (or doesn't have) Port
+                        //  - has Transmitter, already used it, and can't use (or doesn't have) Port
+
                         this.socket.emit(events.output.END_ROLL, {
                             game: this.gameSlug,
                             playerId: this.thisPlayer.id
@@ -1050,10 +1074,13 @@ export default class GamePage extends Vue {
                     }
                 }, 1100);
             })
+            .on(events.input.ADDED_TWO, (data: AddedTwo) => {
+                this.log(`${this.playerName(data.player)} přidal/a ke svému hodu 2, nyní je jeho/její hod ${data.sum}.`, true);
+            })
             .on(events.input.FINAL_DICE_ROLL, (data: DiceRollOutput) => {
                 if (this.playerHasCard(this.findPlayer(data.player), CardName.Transmitter)) {
                     // only if player has Transmitter and actually CAN change their mind, show this message
-                    this.log(`Konečný hod ${this.playerName(data.player)} je ${data.dice.join(', ')}`, true);
+                    this.log(`Konečný hod ${this.playerName(data.player)} je ${data.dice.join(', ')} (${data.sum}).`, true);
                 }
                 const [first, second] = data.dice;
                 this.dice.first = first;
@@ -1170,6 +1197,12 @@ export default class GamePage extends Vue {
                 }
 
                 this.currentTurnPhase = TurnPhase.EndTurn;
+            })
+            .on(events.input.IT_CENTER_COIN, (data: ItCenterCoin) => {
+                const player = this.findPlayer(data.player);
+                this.log(`${player.name} přidal/a jednu minci na svoji kartu IT centrum.`, true);
+                player.itCenterCoins += 1;
+                player.money -= 1;
             })
             .on(events.input.AIRPORT_GAIN, ({ player }: AirportGain) => {
                 this.log(`${this.playerName(player)} nic nepostavil/a, dostane 10 mincí za Letiště.`, true);

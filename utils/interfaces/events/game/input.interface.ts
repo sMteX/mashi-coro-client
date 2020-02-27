@@ -31,6 +31,10 @@ export interface DiceRollOutput {
     sum: number;
     transmitter: boolean;
 }
+export interface AddedTwo {
+    sum: number;
+    player: number;
+}
 export interface RedCardEffects {
     fromPlayer: number;
     result: {
@@ -86,6 +90,9 @@ export interface TownHallGain {
 export interface PlayerBoughtCard {
     player: number;
     card: CardName;
+}
+export interface ItCenterCoin {
+    player: number;
 }
 export interface AirportGain {
     player: number;

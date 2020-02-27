@@ -22,6 +22,7 @@ export const events = {
             GAME_DATA_LOAD: 'gameDataLoad',
             GAME_STARTING: 'gameStarting',
             DICE_ROLL_OUTPUT: 'diceRollOutput',
+            ADDED_TWO: 'addedTwo',
             FINAL_DICE_ROLL: 'finalDiceRoll',
             RED_CARD_EFFECTS: 'redCardEffects',
             BLUE_CARD_EFFECTS: 'blueCardEffects',
@@ -32,6 +33,7 @@ export const events = {
             TOWN_HALL_GAIN: 'townHallGain',
             BUILDING_POSSIBLE: 'buildingPossible',
             PLAYER_BOUGHT_CARD: 'playerBoughtCard',
+            IT_CENTER_COIN: 'itCenterCoin',
             AIRPORT_GAIN: 'airportGain',
             NEW_TURN: 'newTurn',
             AMUSEMENT_PARK_NEW_TURN: 'newTurnAmusement',
@@ -42,6 +44,7 @@ export const events = {
         output: {
             PLAYER_CONNECT: 'playerConnect',
             DICE_ROLL: 'diceRoll', // beginning of the turn
+            ADD_TWO: 'addTwo',
             END_ROLL: 'endRoll',
             ACTIVE_PURPLE_CARDS_INPUT: 'activePurpleCardsInput',
             BUY_CARD: 'buyCard',
