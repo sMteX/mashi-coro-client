@@ -31,7 +31,7 @@
                             a-row
                                 component(:is="injections.components.CardDescription" :text="props.card.description")
         // - miniature
-        div.card-stack
+        div.card-stack(:class="{ deactivated: !props.active }")
             div(v-for="index in props.cardCount-1" :class="`card_${index}`" :key="index")
             div.card-miniature(:class="{ clickable: props.clickable }" @click="props.clickEvent")
                 a-row.inner(type="flex" justify="center" align="middle" :class="props.backgroundClass")
@@ -76,6 +76,10 @@ const CardComponentProps = Vue.extend({
         cardCount: {
             required: true,
             type: Number
+        },
+        active: {
+            required: true,
+            type: Boolean
         },
         triggeredByAll: {
             required: true,
@@ -179,6 +183,9 @@ $colors: (
     100% {
         opacity: 1;
     }
+}
+.deactivated {
+    transform: rotate(-90deg);
 }
 .clickable {
     cursor: pointer;

@@ -4,6 +4,7 @@ import { Card, CardName } from '~/utils/cards';
 export interface CardCount {
     card: Card;
     count: number;
+    active: boolean;
 }
 interface CardPairInput {
     card: CardName;
@@ -56,6 +57,8 @@ export interface GreenCardEffects {
     player: number;
     newMoney: number;
     gains: number;
+    // whether to toggle (activate/deactivate) Winery for given player
+    wineryToggled: boolean;
 }
 export interface PassivePurpleCardEffects {
     player: number;

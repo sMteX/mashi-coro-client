@@ -318,6 +318,11 @@ export default class GamePage extends Vue {
         this.alreadyBought = true;
     }
 
+    toggleCardActive (player: Player, card: CardName) {
+        const cc = player.cards.find(c => c.card.cardName === card)!;
+        cc.active = !cc.active;
+    }
+
     isCardClickable ({ card }: CardCount): boolean {
         let purpleCheck = true;
         if (card.color === CardColor.Purple) {
@@ -820,7 +825,8 @@ export default class GamePage extends Vue {
                 ...this.cardDb[pair.card],
                 bought: false
             },
-            count: pair.count
+            count: pair.count,
+            active: true
         }));
         this.activePlayerId = data.startingPlayerId;
         this.players.push(...data.players.map(player => ({
@@ -833,14 +839,16 @@ export default class GamePage extends Vue {
                     ...this.cardDb[pair.card],
                     bought: true
                 },
-                count: pair.count
+                count: pair.count,
+                active: true
             })),
             winningCards: data.winningCards.map(name => ({
                 card: {
                     ...this.cardDb[name],
-                    bought: false
+                    bought: (name === CardName.TownHall) // everyone starts with Town Hall
                 },
-                count: 1
+                count: 1,
+                active: true
             })),
             itCenterCoins: 0
         })));
@@ -1076,7 +1084,8 @@ export default class GamePage extends Vue {
                         ...this.cardDb[pair.card],
                         bought: false
                     },
-                    count: pair.count
+                    count: pair.count,
+                    active: true
                 }));
                 this.activePlayerId = data.startingPlayerId;
                 this.players.push(...data.players.map(player => ({
@@ -1089,14 +1098,16 @@ export default class GamePage extends Vue {
                             ...this.cardDb[pair.card],
                             bought: true
                         },
-                        count: pair.count
+                        count: pair.count,
+                        active: true
                     })),
                     winningCards: data.winningCards.map(name => ({
                         card: {
                             ...this.cardDb[name],
                             bought: (name === CardName.TownHall) // everyone starts with Town Hall
                         },
-                        count: 1
+                        count: 1,
+                        active: true
                     })),
                     itCenterCoins: 0
                 })));
@@ -1181,11 +1192,15 @@ export default class GamePage extends Vue {
                 }
             })
             .on(events.input.GREEN_CARD_EFFECTS, (data: GreenCardEffects) => {
+                // TODO: Logistics Company
                 if (data.gains > 0) {
                     this.log(`Zelené karty: ${this.playerName(data.player)} získává ${this.formatCoins(data.gains)} a má nyní ${this.formatCoins(data.newMoney)}.`, true);
                 }
                 const p = this.findPlayer(data.player);
                 p.money = data.newMoney;
+                if (data.wineryToggled) {
+                    this.toggleCardActive(p, CardName.Winery);
+                }
                 this.currentTurnPhase = TurnPhase.PurpleCards;
 
                 /* server side: after green cards are done, check if player has some purple cards that NEED user input (and are actually triggered)
@@ -1322,7 +1337,8 @@ export default class GamePage extends Vue {
             cost = cardObj.card.cost;
         } else {
             const cardObj = this.table.buyableCards.map(cc => cc.card).find(c => c.cardName === card)!;
-            player.cards.push({ card: { ...cardObj, bought: true }, count: 1 });
+            // we already made the assumption that we can't move/exchange deactivated cards
+            player.cards.push({ card: { ...cardObj, bought: true }, count: 1, active: true });
             cost = cardObj.cost;
         }
         if (buying) {

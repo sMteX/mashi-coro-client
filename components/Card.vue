@@ -88,6 +88,7 @@ export default class Card extends CardProps {
                 triggeredByAll,
                 showCost,
                 showItCenter,
+                active: info.active,
                 itCenter: props.itCenter,
                 card: info.card,
                 cardCount: info.count
