@@ -1285,6 +1285,9 @@ export default class GamePage extends Vue {
                     }
                 }
 
+                // cards had to be drawn to fill up the empty spot, add them to table
+                data.drawnCards.forEach(card => this.addCardToTable(card));
+
                 this.currentTurnPhase = TurnPhase.EndTurn;
             })
             .on(events.input.IT_CENTER_COIN, (data: ItCenterCoin) => {
@@ -1327,6 +1330,15 @@ export default class GamePage extends Vue {
                 alert('Všichni ostatní hráči odešli, hra končí.');
                 this.$router.push({ path: '/lobby' });
             });
+    }
+
+    addCardToTable (card: CardName) {
+        const pair = this.table.buyableCards.find(cc => cc.card.cardName === card);
+        if (pair) {
+            pair.count += 1;
+        } else {
+            this.table.buyableCards.push({ card: { ...this.cardDb[card], bought: false }, count: 1, active: true });
+        }
     }
 
     addCardToPlayer (player: Player, card: CardName, buying: boolean) {

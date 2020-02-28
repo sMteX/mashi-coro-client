@@ -99,6 +99,7 @@ export interface TownHallGain {
 export interface PlayerBoughtCard {
     player: number;
     card: CardName;
+    drawnCards: CardName[];
 }
 export interface ItCenterCoin {
     player: number;
