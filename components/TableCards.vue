@@ -1,10 +1,10 @@
 <template lang="pug">
     a-row
-        a-col(span="4")
+        a-col.purple-cards(span="4")
             a-row(v-for="(card, index) in purpleCards" :key="index")
                 Card(:info="card" :location="cardLocation.Table" :clickable="clickableCheck(card)" :clickEvent="clickEvent")
         a-col(span="20")
-            a-row(type="flex" justify="space-around")
+            a-row.low-row(type="flex" justify="space-around")
                 Card(v-for="(card, index) in lowCards" :key="index" :info="card" :location="cardLocation.Table" :clickable="clickableCheck(card)" :clickEvent="clickEvent")
             a-row(type="flex" justify="space-around")
                 Card(v-for="(card, index) in highCards" :key="index" :info="card" :location="cardLocation.Table" :clickable="clickableCheck(card)" :clickEvent="clickEvent")
@@ -47,20 +47,32 @@ export default class TableCards extends TableCardsProps {
     }
 
     get purpleCards (): CardCount[] {
-        return this.cards.filter(({ card }) => card.color === CardColor.Purple);
+        return this.cards
+            .filter(({ card }) => card.color === CardColor.Purple)
+            .sort(({ card: cardA }, { card: cardB }) => this.avg(cardA.triggerNumbers) - this.avg(cardB.triggerNumbers));
     }
 
     get lowCards (): CardCount[] {
-        return this.cards.filter(({ card }) => card.color !== CardColor.Purple && this.avg(card.triggerNumbers) <= 6);
+        return this.cards
+            .filter(({ card }) => card.color !== CardColor.Purple && this.avg(card.triggerNumbers) <= 6)
+            .sort(({ card: cardA }, { card: cardB }) => this.avg(cardA.triggerNumbers) - this.avg(cardB.triggerNumbers));
     }
 
     get highCards (): CardCount[] {
-        return this.cards.filter(({ card }) => card.color !== CardColor.Purple && this.avg(card.triggerNumbers) > 6);
+        return this.cards
+            .filter(({ card }) => card.color !== CardColor.Purple && this.avg(card.triggerNumbers) > 6)
+            .sort(({ card: cardA }, { card: cardB }) => this.avg(cardA.triggerNumbers) - this.avg(cardB.triggerNumbers));
     }
 }
 
 </script>
 
-<style scoped>
-
+<style scoped lang="scss">
+.purple-cards {
+    padding-top: 40px;
+}
+.low-row {
+    margin-top: 20px;
+    margin-bottom: 40px;
+}
 </style>

@@ -117,8 +117,8 @@ export default class CardComponent extends CardComponentProps {}
 </script>
 
 <style scoped lang="scss">
-$card-mini-height: 120;
-$card-mini-width: 90;
+$card-mini-height: 130;
+$card-mini-width: 100;
 $card-overlay: 3;
 
 $card-height: 300;
