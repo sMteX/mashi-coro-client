@@ -67,7 +67,8 @@ export interface PassivePurpleCardEffects {
             gains?: number;
             newMoney: number;
         }
-    }
+    },
+    parkActivated: boolean;
 }
 export interface ActivePurpleCardEffects {
     results: { [card in CardName]?: OfficeBuildingEffect|TelevisionStudioEffect|WaterTreatmentPlantEffect; }

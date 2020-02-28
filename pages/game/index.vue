@@ -950,10 +950,10 @@ export default class GamePage extends Vue {
             value: player.id,
             label: player.name,
             children: player.cards
-                .filter(cc => cc.card.color !== CardColor.Purple)
-                .map(cc => ({
-                    value: cc.card.cardName,
-                    label: `${cc.card.name} (${cc.count})`
+                .filter(({ card, active }) => card.color !== CardColor.Purple && active)
+                .map(({ card, count }) => ({
+                    value: card.cardName,
+                    label: `${card.name} (${count})`
                 }))
         }));
     }
@@ -1214,13 +1214,16 @@ export default class GamePage extends Vue {
             })
             .on(events.input.PASSIVE_PURPLE_CARD_EFFECTS, (data: PassivePurpleCardEffects) => {
                 Object.entries(data.result).forEach(([id, result]) => {
-                    if (result.gains !== undefined && result.gains > 0) {
+                    if (!data.parkActivated && result.gains !== undefined && result.gains > 0) {
                         // someone stole something from player, show
                         this.log(`Fialové karty: ${this.playerName(data.player)} získává ${this.formatCoins(result.gains)} od ostatních hráčů a má nyní ${this.formatCoins(result.newMoney)}.`, true);
                     }
                     const p = this.findPlayer(Number(id));
                     p.money = result.newMoney;
                 });
+                if (data.parkActivated) {
+                    this.log('Fialové karty: Byla aktivována karta Park - mince všech hráčů byly rozděleny rovným dílem.', true);
+                }
                 // still purple cards
             })
             // following event is separated because it's dealing with modals and I'd like to have the handlers somewhat "near" each other
