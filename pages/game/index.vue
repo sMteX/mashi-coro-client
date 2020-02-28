@@ -95,8 +95,8 @@
                             a-row
                                 a-row
                                     h3 Dostupné karty:
-                                a-row
-                                    a-row(type="flex" justify="space-around" v-for="(row, rowIndex) in buyableCardsTable" :key="rowIndex")
+                                TableCards(:cards="table.buyableCards" :clickableCheck="isCardClickable" :clickEvent="buyCard")
+                                    // -a-row(type="flex" justify="space-around" v-for="(row, rowIndex) in buyableCardsTable" :key="rowIndex")
                                         Card(v-for="(card, index) in row" :info="card" :key="index" :clickable="isCardClickable(card)" :clickEvent="buyCard" :location="cardLocation.Table")
                         a-col(span=11 offset=1)
                             PlayerCards(v-for="(player, index) in otherPlayers" :key="index" :player="player")
@@ -132,8 +132,9 @@ import {
 } from '~/utils/interfaces/events/game/input.interface';
 import PlayerCards from '~/components/PlayerCards.vue';
 import Card from '~/components/Card.vue';
-import { Card as CardInterface, CardColor, CardLocation, CardName, CardSymbol } from '~/utils/cards';
+import { Card as CardInterface, CardColor, CardLocation, CardName } from '~/utils/cards';
 import Dice from '~/components/Dice.vue';
+import TableCards from '~/components/TableCards.vue';
 
 const io = require('socket.io-client');
 const { game: events } = eventConstants;
@@ -182,7 +183,7 @@ interface ActionButton {
     isActive: () => boolean;
 }
 
-const dominants = [CardName.Station, CardName.ShoppingCenter, CardName.AmusementPark, CardName.Transmitter];
+const dominants = [CardName.TownHall, CardName.Port, CardName.Station, CardName.ShoppingCenter, CardName.AmusementPark, CardName.Transmitter, CardName.Airport];
 
 @Component({
     components: {
@@ -190,7 +191,8 @@ const dominants = [CardName.Station, CardName.ShoppingCenter, CardName.Amusement
         Logo,
         Card,
         PlayerCards,
-        Dice
+        Dice,
+        TableCards
     },
     head: {
         title: 'Game'
@@ -267,19 +269,19 @@ export default class GamePage extends Vue {
     }
 
     mounted () {
-        // this.dummySetup = true;
+        this.dummySetup = true;
         // without it is temporarily allowed through dummy data
-        // this.useDummyData();
+        this.useDummyData();
         // TODO: redirect if player didn't come from lobby (or maybe just don't use pages for this, but instead giant components that just get switched?)
-        this.socket = io.connect(
-            `${process.env.serverUrl}/${events.namespaceName}`
-        );
-        this.gameSlug = this.$route.query.id as string;
-        this.setupHandlers();
-        this.socket.emit(events.output.PLAYER_CONNECT, {
-            game: this.gameSlug,
-            id: Number(this.$route.query.playerId)
-        });
+        // this.socket = io.connect(
+        //     `${process.env.serverUrl}/${events.namespaceName}`
+        // );
+        // this.gameSlug = this.$route.query.id as string;
+        // this.setupHandlers();
+        // this.socket.emit(events.output.PLAYER_CONNECT, {
+        //     game: this.gameSlug,
+        //     id: Number(this.$route.query.playerId)
+        // });
     }
 
     formatCoins (coins: number, nominative: boolean = false) {
@@ -571,11 +573,43 @@ export default class GamePage extends Vue {
     useDummyData () {
         // mimics real data returned
         const data: GameDataLoad = {
-            startingPlayerId: 9,
-            // cardDb
+            players: [
+                {
+                    id: 91,
+                    socketId: '/game#9qoWZnXfL5k37ByDAAAD',
+                    name: 'Chizu',
+                    cards: [
+                        {
+                            card: 0,
+                            count: 1
+                        },
+                        {
+                            card: 4,
+                            count: 1
+                        }
+                    ],
+                    money: 3
+                },
+                {
+                    id: 92,
+                    socketId: '/game#qM64zPg90XWAbP9FAAAE',
+                    name: 'Gieen',
+                    cards: [
+                        {
+                            card: 0,
+                            count: 1
+                        },
+                        {
+                            card: 4,
+                            count: 1
+                        }
+                    ],
+                    money: 3
+                }
+            ],
             cardDb: {
-                [CardName.WheatField]: {
-                    cardName: CardName.WheatField,
+                0: {
+                    cardName: 0,
                     name: 'Pšeničné pole',
                     cost: 1,
                     description: 'Vezměte si 1 minci z banku',
@@ -585,8 +619,19 @@ export default class GamePage extends Vue {
                         1
                     ]
                 },
-                [CardName.Farm]: {
-                    cardName: CardName.Farm,
+                1: {
+                    cardName: 1,
+                    name: 'Sushi Bar',
+                    cost: 2,
+                    description: 'Máte-li přístav, dostanete 3 mince od hráče na tahu.',
+                    symbol: 3,
+                    color: 2,
+                    triggerNumbers: [
+                        1
+                    ]
+                },
+                2: {
+                    cardName: 2,
                     name: 'Statek',
                     cost: 1,
                     description: 'Vezměte si 1 minci z banku',
@@ -596,8 +641,19 @@ export default class GamePage extends Vue {
                         2
                     ]
                 },
-                [CardName.Bakery]: {
-                    cardName: CardName.Bakery,
+                3: {
+                    cardName: 3,
+                    name: 'Hokynářství',
+                    cost: 0,
+                    description: 'Máte-li postavenou nejvýše 1 dominantu (kromě radnice), vezměte si 2 mince z banku.',
+                    symbol: 1,
+                    color: 0,
+                    triggerNumbers: [
+                        2
+                    ]
+                },
+                4: {
+                    cardName: 4,
                     name: 'Pekárna',
                     cost: 1,
                     description: 'Vezměte si 1 minci z banku',
@@ -608,8 +664,8 @@ export default class GamePage extends Vue {
                         3
                     ]
                 },
-                [CardName.CoffeeShop]: {
-                    cardName: CardName.CoffeeShop,
+                5: {
+                    cardName: 5,
                     name: 'Kavárna',
                     cost: 2,
                     description: 'Dostanete 1 minci od hráče na tahu',
@@ -619,8 +675,31 @@ export default class GamePage extends Vue {
                         3
                     ]
                 },
-                [CardName.Shop]: {
-                    cardName: CardName.Shop,
+                6: {
+                    cardName: 6,
+                    name: 'Kukuřičné pole',
+                    cost: 2,
+                    description: 'Máte-li postavenou nejvýše 1 dominantu (kromě radnice), vezměte si 1 mince z banku.',
+                    symbol: 0,
+                    color: 1,
+                    triggerNumbers: [
+                        3,
+                        4
+                    ]
+                },
+                7: {
+                    cardName: 7,
+                    name: 'Květinová zahrada',
+                    cost: 2,
+                    description: 'Vezměte si 1 mince z banku.',
+                    symbol: 0,
+                    color: 1,
+                    triggerNumbers: [
+                        4
+                    ]
+                },
+                8: {
+                    cardName: 8,
                     name: 'Samoobsluha',
                     cost: 2,
                     description: 'Vezměte si 3 mince z banku',
@@ -630,8 +709,19 @@ export default class GamePage extends Vue {
                         4
                     ]
                 },
-                [CardName.Forest]: {
-                    cardName: CardName.Forest,
+                9: {
+                    cardName: 9,
+                    name: 'Luxusní restaurace',
+                    cost: 3,
+                    description: 'Má-li hráč na tahu postavené alespoň 2 dominanty (kromě radnice), dostanete od něj 5 mincí.',
+                    symbol: 3,
+                    color: 2,
+                    triggerNumbers: [
+                        5
+                    ]
+                },
+                10: {
+                    cardName: 10,
                     name: 'Les',
                     cost: 3,
                     description: 'Vezměte si 1 minci z banku',
@@ -641,8 +731,19 @@ export default class GamePage extends Vue {
                         5
                     ]
                 },
-                [CardName.Stadium]: {
-                    cardName: CardName.Stadium,
+                11: {
+                    cardName: 11,
+                    name: 'Květinářství',
+                    cost: 2,
+                    description: 'Za každou svoji květinovou zahradu si vezměte 1 minci z banku.',
+                    symbol: 1,
+                    color: 0,
+                    triggerNumbers: [
+                        6
+                    ]
+                },
+                12: {
+                    cardName: 12,
                     name: 'Stadión',
                     cost: 6,
                     description: 'Dostanete 2 mince od každého soupeře',
@@ -652,8 +753,8 @@ export default class GamePage extends Vue {
                         6
                     ]
                 },
-                [CardName.TelevisionStudio]: {
-                    cardName: CardName.TelevisionStudio,
+                13: {
+                    cardName: 13,
                     name: 'Televizní studio',
                     cost: 7,
                     description: 'Dostanete 5 mincí od zvoleného soupeře',
@@ -663,41 +764,119 @@ export default class GamePage extends Vue {
                         6
                     ]
                 },
-                [CardName.OfficeBuilding]: {
-                    cardName: CardName.OfficeBuilding,
+                14: {
+                    cardName: 14,
                     name: 'Kancelářská budova',
                     cost: 8,
-                    description: `Můžete vyměnit jednu svoji kartu objektu za soupeřovu (nelze měnit #SYMBOL_${CardSymbol.Tower})`,
+                    description: 'Můžete vyměnit jednu svoji kartu objektu za soupeřovu (nelze měnit #SYMBOL_5)',
                     symbol: 5,
                     color: 3,
                     triggerNumbers: [
                         6
                     ]
                 },
-                [CardName.DairyShop]: {
-                    cardName: CardName.DairyShop,
+                15: {
+                    cardName: 15,
+                    name: 'Nakladatelství',
+                    cost: 5,
+                    description: 'Dostanete po 1 minci od každého soupeře za každý jeho objekt #SYMBOL_3 a #SYMBOL_1.',
+                    symbol: 5,
+                    color: 3,
+                    triggerNumbers: [
+                        7
+                    ]
+                },
+                16: {
+                    cardName: 16,
+                    name: 'Vinohrad',
+                    cost: 3,
+                    description: 'Vezměte si 3 mincí z banku',
+                    symbol: 0,
+                    color: 1,
+                    triggerNumbers: [
+                        7
+                    ]
+                },
+                17: {
+                    cardName: 17,
+                    name: 'Pizzerie',
+                    cost: 1,
+                    description: 'Dostanete 1 minci od hráče na tahu',
+                    symbol: 3,
+                    color: 2,
+                    triggerNumbers: [
+                        7
+                    ]
+                },
+                18: {
+                    cardName: 18,
                     name: 'Mlékárna',
                     cost: 5,
-                    description: `Za každý svůj objekt #SYMBOL_${CardSymbol.Pig} si vezměte 3 mince z banku.`,
+                    description: 'Za každý svůj objekt #SYMBOL_2 si vezměte 3 mince z banku',
                     symbol: 6,
                     color: 0,
                     triggerNumbers: [
                         7
                     ]
                 },
-                [CardName.FurnitureFactory]: {
-                    cardName: CardName.FurnitureFactory,
+                19: {
+                    cardName: 19,
+                    name: 'Čistička',
+                    cost: 4,
+                    description: 'Určete název objektu (ne však #SYMBOL_5). Každý hráč (i vy) všechny tyto objekty postaví mimo provoz. Vy si za každý z nich vezměte po 1 minci z banku.',
+                    symbol: 5,
+                    color: 3,
+                    triggerNumbers: [
+                        8
+                    ]
+                },
+                20: {
+                    cardName: 20,
+                    name: 'Burger grill',
+                    cost: 1,
+                    description: 'Dostanete 1 minci od hráče na tahu',
+                    symbol: 3,
+                    color: 2,
+                    triggerNumbers: [
+                        8
+                    ]
+                },
+                21: {
+                    cardName: 21,
                     name: 'Továrna na nábytek',
                     cost: 3,
-                    description: `Za každý svůj objekt #SYMBOL_${CardSymbol.Cog} si vezměte 3 mince z banku`,
+                    description: 'Za každý svůj objekt #SYMBOL_4 si vezměte 3 mince z banku',
                     symbol: 6,
                     color: 0,
                     triggerNumbers: [
                         8
                     ]
                 },
-                [CardName.Mine]: {
-                    cardName: CardName.Mine,
+                22: {
+                    cardName: 22,
+                    name: 'Rybářský člun',
+                    cost: 2,
+                    description: 'Máte-li přístav, vezměte si 3 mince z banku',
+                    symbol: 7,
+                    color: 1,
+                    triggerNumbers: [
+                        8
+                    ]
+                },
+                23: {
+                    cardName: 23,
+                    name: 'Finanční úřad',
+                    cost: 4,
+                    description: 'Dostanete polovinu mincí (zaokrouhleno dolů od každého soupeře, který má aktuálně 10 a více mincí.',
+                    symbol: 5,
+                    color: 3,
+                    triggerNumbers: [
+                        8,
+                        9
+                    ]
+                },
+                24: {
+                    cardName: 24,
                     name: 'Důl',
                     cost: 6,
                     description: 'Vezměte si 5 mincí z banku',
@@ -707,8 +886,31 @@ export default class GamePage extends Vue {
                         9
                     ]
                 },
-                [CardName.ApplePark]: {
-                    cardName: CardName.ApplePark,
+                25: {
+                    cardName: 25,
+                    name: 'Vinařství',
+                    cost: 3,
+                    description: 'Vezměte si z banku 6 mincí za každý svůj vinohrad. Vinařství poté postavte mimo provoz.',
+                    symbol: 6,
+                    color: 0,
+                    triggerNumbers: [
+                        9
+                    ]
+                },
+                26: {
+                    cardName: 26,
+                    name: 'Přepravní firma',
+                    cost: 2,
+                    description: 'Odevzdejte libovolnému soupeři svůj libovolný objekt (ne však #SYMBOL_5). Za to si vezměte 4 mince z banku.',
+                    symbol: 9,
+                    color: 0,
+                    triggerNumbers: [
+                        9,
+                        10
+                    ]
+                },
+                27: {
+                    cardName: 27,
                     name: 'Jabloňový sad',
                     cost: 3,
                     description: 'Vezměte si 3 mince z banku',
@@ -718,8 +920,19 @@ export default class GamePage extends Vue {
                         10
                     ]
                 },
-                [CardName.Restaurant]: {
-                    cardName: CardName.Restaurant,
+                28: {
+                    cardName: 28,
+                    name: 'IT centrum',
+                    cost: 1,
+                    description: 'Na konci svého tahu můžete na tuto kartu přidat 1 svou minci. Pokud padne "10", dostanete od každého soupeře tolik mincí, kolik jich na této kartě leží.',
+                    symbol: 5,
+                    color: 3,
+                    triggerNumbers: [
+                        10
+                    ]
+                },
+                29: {
+                    cardName: 29,
                     name: 'Restaurace',
                     cost: 3,
                     description: 'Dostanete 2 minci od hráče na tahu',
@@ -730,11 +943,35 @@ export default class GamePage extends Vue {
                         10
                     ]
                 },
-                [CardName.Mall]: {
-                    cardName: CardName.Mall,
+                30: {
+                    cardName: 30,
+                    name: 'Sodovkárna',
+                    cost: 5,
+                    description: 'Vezměte si po 1 minci z banku za každý objekt #SYMBOL_3 každého hráče (i svůj).',
+                    symbol: 6,
+                    color: 0,
+                    triggerNumbers: [
+                        11
+                    ]
+                },
+                31: {
+                    cardName: 31,
+                    name: 'Park',
+                    cost: 3,
+                    description: 'Vezměte a nově rozdělte všechny mince všech hráčů mezi všechny hráče rovným dílem. Případné chybějící mince doplňte z banku.',
+                    symbol: 5,
+                    color: 3,
+                    triggerNumbers: [
+                        11,
+                        12,
+                        13
+                    ]
+                },
+                32: {
+                    cardName: 32,
                     name: 'Obchodní dům',
                     cost: 2,
-                    description: `Za každý svůj objekt #SYMBOL_${CardSymbol.Wheat} si vezměte 2 mince z banku`,
+                    description: 'Za každý svůj objekt #SYMBOL_0 si vezměte 2 mince z banku',
                     symbol: 8,
                     color: 0,
                     triggerNumbers: [
@@ -742,8 +979,64 @@ export default class GamePage extends Vue {
                         12
                     ]
                 },
-                [CardName.Station]: {
-                    cardName: CardName.Station,
+                33: {
+                    cardName: 33,
+                    name: 'Velkoobchod s potravinami',
+                    cost: 2,
+                    description: 'Za každý svůj objekt #SYMBOL_3 si vezměte 2 mince z banku.',
+                    symbol: 6,
+                    color: 0,
+                    triggerNumbers: [
+                        12,
+                        13
+                    ]
+                },
+                34: {
+                    cardName: 34,
+                    name: 'Noční klub',
+                    cost: 4,
+                    description: 'Má-li hráč na tahu postavené alespoň 3 dominanty (kromě radnice), dostanete všechny jeho mince.',
+                    symbol: 3,
+                    color: 2,
+                    triggerNumbers: [
+                        12,
+                        13,
+                        14
+                    ]
+                },
+                35: {
+                    cardName: 35,
+                    name: 'Rybářská loď',
+                    cost: 5,
+                    description: 'Máte-li přístav, hodí hráč na tahu dvěma kostkami. Vezměte si tolik mincí z banku, kolik na kostkách padlo.',
+                    symbol: 7,
+                    color: 1,
+                    triggerNumbers: [
+                        12,
+                        13,
+                        14
+                    ]
+                },
+                36: {
+                    cardName: 36,
+                    name: 'Radnice',
+                    cost: 0,
+                    description: 'Nemáte-li před krokem Stavba ve svém tahu žádné peníze, vezměte si 1 minci z banku.',
+                    symbol: 5,
+                    color: 4,
+                    triggerNumbers: []
+                },
+                37: {
+                    cardName: 37,
+                    name: 'Přístav',
+                    cost: 2,
+                    description: 'Padne-li vám na kostkách 10 a více, smíte k výsledku hodu přičíst 2.',
+                    symbol: 5,
+                    color: 4,
+                    triggerNumbers: []
+                },
+                38: {
+                    cardName: 38,
                     name: 'Nádraží',
                     cost: 4,
                     description: 'Můžete házet jednou nebo dvěma kostkami.',
@@ -751,17 +1044,17 @@ export default class GamePage extends Vue {
                     color: 4,
                     triggerNumbers: []
                 },
-                [CardName.ShoppingCenter]: {
-                    cardName: CardName.ShoppingCenter,
+                39: {
+                    cardName: 39,
                     name: 'Nákupní centrum',
                     cost: 10,
-                    description: `Dostáváte-li příjmy za objekty #SYMBOL_${CardSymbol.Coffee} nebo #SYMBOL_${CardSymbol.Box}, dostanete za každý z nich o 1 minci více.`,
+                    description: 'Dostáváte-li příjmy za objekty #SYMBOL_3 nebo #SYMBOL_1, dostanete za každý z nich o 1 minci více.',
                     symbol: 5,
                     color: 4,
                     triggerNumbers: []
                 },
-                [CardName.AmusementPark]: {
-                    cardName: CardName.AmusementPark,
+                40: {
+                    cardName: 40,
                     name: 'Zábavní park',
                     cost: 16,
                     description: 'Pokud vám při hodu dvěma kostkami padnou stejná čísla, máte tah navíc.',
@@ -769,59 +1062,86 @@ export default class GamePage extends Vue {
                     color: 4,
                     triggerNumbers: []
                 },
-                [CardName.Transmitter]: {
-                    cardName: CardName.Transmitter,
+                41: {
+                    cardName: 41,
                     name: 'Vysílač',
                     cost: 22,
                     description: 'Jednou v každém tahu smíte znovu hodit kostkami.',
                     symbol: 5,
                     color: 4,
                     triggerNumbers: []
+                },
+                42: {
+                    cardName: 42,
+                    name: 'Letiště',
+                    cost: 30,
+                    description: 'Nepostavíte-li ve svém tahu žádný objekt ani dominantu, vezměte si 10 mincí z banku.',
+                    symbol: 5,
+                    color: 4,
+                    triggerNumbers: []
                 }
             },
-            players: [
+            buyableCards: [
                 {
-                    id: 9,
-                    socketId: 'blah',
-                    name: 'Chizu',
-                    cards: [
-                        { card: CardName.WheatField, count: 1 },
-                        { card: CardName.Bakery, count: 1 }
-                    ],
-                    money: 3
+                    count: 1,
+                    card: 1
                 },
                 {
-                    id: 10,
-                    socketId: 'blah2',
-                    name: 'Gieen',
-                    cards: [
-                        { card: CardName.WheatField, count: 1 },
-                        { card: CardName.Bakery, count: 1 }
-                    ],
-                    money: 3
+                    count: 1,
+                    card: 2
+                },
+                {
+                    count: 1,
+                    card: 3
+                },
+                {
+                    count: 1,
+                    card: 8
+                },
+                {
+                    count: 1,
+                    card: 9
+                },
+                {
+                    count: 1,
+                    card: 18
+                },
+                {
+                    count: 1,
+                    card: 24
+                },
+                {
+                    count: 1,
+                    card: 27
+                },
+                {
+                    count: 1,
+                    card: 32
+                },
+                {
+                    count: 1,
+                    card: 33
+                },
+                {
+                    count: 1,
+                    card: 13
+                },
+                {
+                    count: 1,
+                    card: 14
                 }
             ],
-            buyableCards: [
-                { card: CardName.WheatField, count: 6 },
-                { card: CardName.Farm, count: 6 },
-                { card: CardName.Bakery, count: 6 },
-                { card: CardName.CoffeeShop, count: 6 },
-                { card: CardName.Shop, count: 6 },
-                { card: CardName.Forest, count: 6 },
-                { card: CardName.Stadium, count: 4 },
-                { card: CardName.TelevisionStudio, count: 4 },
-                { card: CardName.OfficeBuilding, count: 4 },
-                { card: CardName.DairyShop, count: 6 },
-                { card: CardName.FurnitureFactory, count: 6 },
-                { card: CardName.Mine, count: 6 },
-                { card: CardName.ApplePark, count: 6 },
-                { card: CardName.Restaurant, count: 6 },
-                { card: CardName.Mall, count: 6 }
-            ],
             winningCards: [
-                ...dominants
+                36,
+                37,
+                38,
+                39,
+                40,
+                41,
+                42
             ],
-            bank: 204
+            bank: 204,
+            startingPlayerId: 92
         };
 
         this.cardDb = Object.assign({}, data.cardDb);
