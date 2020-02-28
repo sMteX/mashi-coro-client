@@ -246,7 +246,6 @@ export default class LobbyPage extends Vue {
                 this.players.push({ id: player.id, name: player.name, ready: false });
             })
             .on(events.input.GAME_PLAYABLE, () => {
-                // TODO: step 6: when game is playable, react somehow
                 this.log('Hra se nyní dá spustit.');
                 this.isPlayable = true;
             })
@@ -254,7 +253,6 @@ export default class LobbyPage extends Vue {
                 this.log('Všichni hráči jsou připraveni.');
             })
             .on(events.input.PLAYER_CHANGED_READY_STATUS, (event: PlayerChangedReady) => {
-                // TODO: handle when another player confirms/cancels ready check
                 const player = this.findPlayer(event.id);
                 player.ready = event.newStatus;
                 if (player.ready) {

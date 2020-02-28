@@ -318,9 +318,15 @@ export default class GamePage extends Vue {
         this.alreadyBought = true;
     }
 
-    toggleCardActive (player: Player, card: CardName) {
-        const cc = player.cards.find(c => c.card.cardName === card)!;
-        cc.active = !cc.active;
+    toggleCardActive (player: Player, card: CardName, newState?: boolean) {
+        const cc = player.cards.find(c => c.card.cardName === card);
+        if (cc) {
+            if (newState === undefined) {
+                cc.active = !cc.active;
+            } else {
+                cc.active = newState;
+            }
+        }
     }
 
     isCardClickable ({ card }: CardCount): boolean {
@@ -972,7 +978,6 @@ export default class GamePage extends Vue {
     }
 
     officeBuildingModalOk () {
-        // TODO: do we need a more rigorous validity check?
         const valid = this.officeBuildingTarget.targetPlayerId !== -1 && this.officeBuildingTarget.swapCardTarget !== -1 && this.officeBuildingTarget.swapCardOwn !== -1;
         if (!valid) {
             return;
@@ -981,9 +986,9 @@ export default class GamePage extends Vue {
 
         this.activePurpleResults[CardName.OfficeBuilding] = {
             // currentPlayerId is sent in the event itself
-            targetPlayerId: this.officeBuildingTarget.targetPlayerId, // TODO: somehow from the cascader
-            swapCardOwn: this.officeBuildingTarget.swapCardOwn, // TODO: somehow from the select
-            swapCardTarget: this.officeBuildingTarget.swapCardTarget // TODO: somehow from the cascader
+            targetPlayerId: this.officeBuildingTarget.targetPlayerId,
+            swapCardOwn: this.officeBuildingTarget.swapCardOwn,
+            swapCardTarget: this.officeBuildingTarget.swapCardTarget
             // or ...this.officeBuildingTarget ?
         };
         this.sendActivePurpleCardsResult();
@@ -1003,9 +1008,8 @@ export default class GamePage extends Vue {
         //         counts[card.cardName] = 0;
         //     }
         // });
-        this.players.flatMap(player => player.cards).forEach(({ card, count }) => {
-            // TODO: don't count inactive cards
-            if (card.color !== CardColor.Purple) {
+        this.players.flatMap(player => player.cards).forEach(({ card, count, active }) => {
+            if (card.color !== CardColor.Purple && active) {
                 counts[card.cardName] = (counts[card.cardName] || 0) + count;
             }
         });
@@ -1061,16 +1065,13 @@ export default class GamePage extends Vue {
         const hasOffice = this.playerHasCard(this.thisPlayer, CardName.OfficeBuilding);
         if (this.dice.sum === 6) {
             if (hasTv) {
-                // TODO: show TV dialog FIRST, in its callback MAYBE Office Building dialog
                 this.tvStudioModalVisible = true;
             } else if (hasOffice) {
-                // TODO: show only Office Building dialog
                 this.officeBuildingModalVisible = true;
             }
         } else {
             this.waterTreatmentPlantModalVisible = true;
         }
-        // TODO: else - waste water plant (8)
     }
 
     setupHandlers () {
@@ -1253,7 +1254,7 @@ export default class GamePage extends Vue {
                         const typedResult = result as WaterTreatmentPlantEffect;
                         const currentPlayer = this.findPlayer(typedResult.currentPlayerId);
                         currentPlayer.money = typedResult.currentPlayerMoney;
-                        // TODO: deactivate chosen cards
+                        this.players.forEach(player => this.toggleCardActive(player, typedResult.card, false));
                         this.log(`Fialové karty: ${currentPlayer.name} postavil/a všechny karty ${this.cardName(cardEnum)} mimo provoz a za to získává ${this.formatCoins(typedResult.gain)}.`);
                     }
                 });
