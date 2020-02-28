@@ -90,7 +90,7 @@
                                         Card(v-for="(card, index) in playerCards(thisPlayer)[0]" :info="card" :key="index" :clickable="isCardClickable(card)" :clickEvent="buyCard" :location="cardLocation.Player")
                                     // - normal cards
                                     a-row(type="flex" justify="start" :gutter=16 v-for="(row, rowIndex) in playerCards(thisPlayer).slice(1)" :key="rowIndex")
-                                        Card(v-for="(card, index) in row" :info="card" :key="index" :location="cardLocation.Player")
+                                        Card(v-for="(card, index) in row" :info="card" :key="index" :location="cardLocation.Player" :itCenter="thisPlayer.itCenterCoins")
                             a-row.delimiter
                             a-row
                                 a-row

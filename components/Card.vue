@@ -1,6 +1,6 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { CardColor, CardLocation } from '~/utils/cards';
+import { CardColor, CardLocation, CardName } from '~/utils/cards';
 import { CardCount } from '~/utils/interfaces/events/game/input.interface';
 import CardComponent from '~/components/CardComponent.vue';
 
@@ -38,6 +38,11 @@ const CardProps = Vue.extend({
             required: true,
             type: Object as () => CardCount
         },
+        itCenter: {
+            required: false,
+            type: Number,
+            default: 0
+        },
         location: {
             required: true,
             type: Number,
@@ -66,6 +71,7 @@ export default class Card extends CardProps {
 
         const triggeredByAll = info.card.color === CardColor.Blue || info.card.color === CardColor.Red;
         const showDominantCloseup = info.card.color === CardColor.Dominant;
+        const showItCenter = info.card.cardName === CardName.ItCenter && info.card.bought;
         const showCost = location !== CardLocation.OtherPlayer && !info.card.bought;
         const clickEvent = () => {
             if (clickable && _clickEvent) {
@@ -81,6 +87,8 @@ export default class Card extends CardProps {
                 clickEvent,
                 triggeredByAll,
                 showCost,
+                showItCenter,
+                itCenter: props.itCenter,
                 card: info.card,
                 cardCount: info.count
             }

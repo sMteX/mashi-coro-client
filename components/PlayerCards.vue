@@ -6,7 +6,7 @@
             p Peníze: {{ player.money }}
         a-row
             a-row(type="flex" justify="start" :gutter=16 v-for="(row, rowIndex) in playerCards" :key="rowIndex")
-                Card(v-for="(card, index) in row" :info="card" :key="index" :location="cardLocation.OtherPlayer")
+                Card(v-for="(card, index) in row" :info="card" :key="index" :location="cardLocation.OtherPlayer" :itCenter="player.itCenterCoins")
 </template>
 
 <script lang="ts">
@@ -15,7 +15,7 @@ import Card from './Card.vue';
 import { CardCount } from '~/utils/interfaces/events/game/input.interface';
 import { CardColor, CardLocation } from '~/utils/cards';
 
-// TODO: duplicate in game/_slug.vue
+// TODO: duplicate in game/index.vue
 interface Player {
     id: number;
     socketId: string;
@@ -24,6 +24,7 @@ interface Player {
     cards: CardCount[];
     money: number;
     winningCards: CardCount[];
+    itCenterCoins: number;
 }
 
 const PlayerCardProps = Vue.extend({

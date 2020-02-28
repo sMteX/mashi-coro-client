@@ -36,7 +36,9 @@
             div.card-miniature(:class="{ clickable: props.clickable }" @click="props.clickEvent")
                 a-row.inner(type="flex" justify="center" align="middle" :class="props.backgroundClass")
                     div.text-center(v-if="props.card.color !== 4") {{ props.card.triggerNumbers.join(', ') }}
-                    div.miniature-name.text-center {{ props.card.name }}
+                    // - TODO: better display
+                    div.miniature-name.text-center(v-if="showItCenter") {{ props.card.name }} ({{ props.itCenter }})
+                    div.miniature-name.text-center(v-else) {{ props.card.name }}
                     div.text-center(v-if="props.showCost") {{ props.card.cost }}
 </template>
 <script lang="ts">
@@ -78,6 +80,15 @@ const CardComponentProps = Vue.extend({
         triggeredByAll: {
             required: true,
             type: Boolean
+        },
+        showItCenter: {
+            required: true,
+            type: Boolean
+        },
+        itCenter: {
+            required: false,
+            type: Number,
+            default: 0
         },
         showCost: {
             required: true,
