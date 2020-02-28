@@ -31,6 +31,20 @@
             // - TODO: popover? for both?
             a-cascader(size="large" placeholder="Vyberte hráče a jeho kartu" :options="officeBuildingItems" @change="onOfficeBuildingCascaderChange" style="width: 300px")
                 // - template(slot="displayRender" slot-scope="{labels, selectedOptions}")
+        a-modal(v-if="loaded"
+            title="Čistička"
+            :visible="waterTreatmentPlantModalVisible"
+            okText="Potvrdit"
+            cancelText="Zrušit"
+            :closable="false"
+            :maskClosable="false"
+            :cancelButtonProps="{ props: { disabled: true } }"
+            :keyboard="false"
+            @ok="waterTreatmentPlantModalOk")
+            p Určete název objektu, který všichni hráči (i vy) postaví mimo provoz. Vy si vezmete 1 minci z banku za každý takto vyřazený objekt. Číslo v závorce udává, kolik takových objektů je právě ve hře u všech hráčů.
+            a-select(size="large" placeholder="Vyberte název objektu" @change="onWaterTreatmentPlantSelectChange" style="width: 300px; margin-bottom: 20px")
+                a-select-option(v-for="(cardCount, index) in waterTreatmentPlantItems" :key="index" :value="cardCount.card")
+                    | {{ cardCount.name }} ({{ cardCount.count }})
 
         a-col.game-container(span=18, offset=3)
             a-row(type="flex" justify="center")
@@ -96,20 +110,25 @@ import Logo from '~/components/Logo.vue';
 import MachiKoroLogo from '~/components/MachiKoroLogo.vue';
 import { events as eventConstants } from '~/utils/constants';
 import {
-    ActivePurpleCardEffects, AddedTwo,
+    ActivePurpleCardEffects,
+    AddedTwo,
     AirportGain,
     AmusementParkNewTurn,
     BlueCardEffects,
     CardCount,
     DiceRollOutput,
     GameDataLoad,
-    GreenCardEffects, ItCenterCoin,
-    NewTurn, OfficeBuildingEffect,
+    GreenCardEffects,
+    ItCenterCoin,
+    NewTurn,
+    OfficeBuildingEffect,
     PassivePurpleCardEffects,
     PlayerBoughtCard,
     PlayerLeftGame,
     PlayerWonGame,
-    RedCardEffects, TelevisionStudioEffect, TownHallGain
+    RedCardEffects,
+    TelevisionStudioEffect,
+    TownHallGain, WaterTreatmentPlantEffect
 } from '~/utils/interfaces/events/game/input.interface';
 import PlayerCards from '~/components/PlayerCards.vue';
 import Card from '~/components/Card.vue';
@@ -188,6 +207,9 @@ export default class GamePage extends Vue {
         swapCardOwn: -1,
         swapCardTarget: -1
     };
+
+    private waterTreatmentPlantModalVisible = false;
+    private waterTreatmentPlantCard = -1;
 
     private cardDb!: {
         [name in CardName]: Omit<CardInterface, 'bought'>;
@@ -893,6 +915,7 @@ export default class GamePage extends Vue {
             swapCardOwn: -1,
             swapCardTarget: -1
         };
+        this.waterTreatmentPlantCard = -1;
     }
 
     tvStudioModalOk () {
@@ -963,6 +986,45 @@ export default class GamePage extends Vue {
         this.sendActivePurpleCardsResult();
     }
 
+    get waterTreatmentPlantItems () {
+        // cards and how many are there active? (how many coins we can get from them)
+        const counts: {[card in CardName]?: number} = {};
+        // Object.values(this.cardDb).forEach((card) => {
+        //     if (card.color !== CardColor.Dominant && card.color !== CardColor.Purple) {
+        //         // technically we can pick any object, not only those that someone has (it makes no sense but that's not our problem)
+        //         counts[card.cardName] = 0;
+        //     }
+        // });
+        this.players.flatMap(player => player.cards).forEach(({ card, count }) => {
+            // TODO: don't count inactive cards
+            if (card.color !== CardColor.Purple) {
+                counts[card.cardName] = (counts[card.cardName] || 0) + count;
+            }
+        });
+        return Object.entries(counts).map(([cardName, count]) => {
+            const card = this.cardDb[Number(cardName) as CardName];
+            return {
+                count,
+                card: card.cardName,
+                name: card.name
+            };
+        });
+    }
+
+    waterTreatmentPlantModalOk () {
+        if (this.waterTreatmentPlantCard === -1) {
+            return;
+        }
+        this.activePurpleResults[CardName.WaterTreatmentPlant] = this.waterTreatmentPlantCard;
+        this.waterTreatmentPlantModalVisible = false;
+
+        this.sendActivePurpleCardsResult();
+    }
+
+    onWaterTreatmentPlantSelectChange (value: number) {
+        this.waterTreatmentPlantCard = value as CardName;
+    }
+
     onActivePurpleCardWait () {
         /*
             this will get ugly
@@ -997,6 +1059,8 @@ export default class GamePage extends Vue {
                 // TODO: show only Office Building dialog
                 this.officeBuildingModalVisible = true;
             }
+        } else {
+            this.waterTreatmentPlantModalVisible = true;
         }
         // TODO: else - waste water plant (8)
     }
@@ -1030,7 +1094,7 @@ export default class GamePage extends Vue {
                     winningCards: data.winningCards.map(name => ({
                         card: {
                             ...this.cardDb[name],
-                            bought: false
+                            bought: (name === CardName.TownHall) // everyone starts with Town Hall
                         },
                         count: 1
                     })),
@@ -1167,6 +1231,12 @@ export default class GamePage extends Vue {
                         this.findPlayer(typedResult.currentPlayerId).money = typedResult.currentPlayerMoney;
                         this.findPlayer(typedResult.targetPlayerId).money = typedResult.targetPlayerMoney;
                         this.log(`Fialové karty: ${this.playerName(typedResult.currentPlayerId)} získává ${this.formatCoins(typedResult.gain)} od ${this.playerName(typedResult.targetPlayerId)} a má nyní ${this.formatCoins(typedResult.currentPlayerMoney)}.`, true);
+                    } else if (cardEnum === CardName.WaterTreatmentPlant) {
+                        const typedResult = result as WaterTreatmentPlantEffect;
+                        const currentPlayer = this.findPlayer(typedResult.currentPlayerId);
+                        currentPlayer.money = typedResult.currentPlayerMoney;
+                        // TODO: deactivate chosen cards
+                        this.log(`Fialové karty: ${currentPlayer.name} postavil/a všechny karty ${this.cardName(cardEnum)} mimo provoz a za to získává ${this.formatCoins(typedResult.gain)}.`);
                     }
                 });
             })

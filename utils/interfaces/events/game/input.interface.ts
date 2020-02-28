@@ -67,7 +67,7 @@ export interface PassivePurpleCardEffects {
     }
 }
 export interface ActivePurpleCardEffects {
-    results: { [card in CardName]?: OfficeBuildingEffect|TelevisionStudioEffect; }
+    results: { [card in CardName]?: OfficeBuildingEffect|TelevisionStudioEffect|WaterTreatmentPlantEffect; }
 }
 // subtypes for ActivePurpleCardEffects
 export interface OfficeBuildingEffect {
@@ -83,10 +83,15 @@ export interface TelevisionStudioEffect {
     targetPlayerMoney: number;
     gain: number;
 }
+export interface WaterTreatmentPlantEffect {
+    card: CardName;
+    currentPlayerId: number;
+    gain: number;
+    currentPlayerMoney: number;
+}
 export interface TownHallGain {
     player: number;
 }
-// TODO: Water Treatment Effects
 export interface PlayerBoughtCard {
     player: number;
     card: CardName;
