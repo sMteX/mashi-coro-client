@@ -45,6 +45,24 @@
             a-select(size="large" placeholder="Vyberte název objektu" @change="onWaterTreatmentPlantSelectChange" style="width: 300px; margin-bottom: 20px")
                 a-select-option(v-for="(cardCount, index) in waterTreatmentPlantItems" :key="index" :value="cardCount.card")
                     | {{ cardCount.name }} ({{ cardCount.count }})
+        a-modal(v-if="loaded"
+            title="Přepravní firma"
+            :visible="logisticsCompanyModalVisible"
+            okText="Potvrdit"
+            cancelText="Zrušit"
+            :closable="false"
+            :maskClosable="false"
+            :cancelButtonProps="{ props: { disabled: true } }"
+            :keyboard="false"
+            @ok="logisticsCompanyModalOk")
+            p Pro každou svoji kartu Přepravní firma určete protihráče, a jakou svoji kartu mu odevzdáte (můžete odevzdat i samotnou Přepravní firmu). Za každou takto odevzdanou kartu získáte 4 mince z banku.
+            a-row(v-for="selectIndex in logisticsCompanyCount" :key="selectIndex")
+                a-select(size="large" placeholder="Vyberte protihráče" @change="onLogisticsCompanyPlayerSelect(selectIndex, $event)" style="width: 300px; margin-bottom: 20px")
+                    a-select-option(v-for="(player, index) in logisticCompanyPlayers" :key="index" :value="player.id")
+                        | {{ player.name }}
+                a-select(size="large" placeholder="Vyberte svoji kartu" @change="onLogisticsCompanyCardSelect(selectIndex, $event)" style="width: 300px; margin-bottom: 20px")
+                    a-select-option(v-for="(cardCount, index) in logisticCompanyCards" :key="index" :value="cardCount.card")
+                        | {{ cardCount.name }} ({{ cardCount.count }})
 
         a-col.game-container(span=18, offset=3)
             a-row(type="flex" justify="center")
@@ -119,7 +137,7 @@ import {
     DiceRollOutput,
     GameDataLoad,
     GreenCardEffects,
-    ItCenterCoin,
+    ItCenterCoin, LogisticsCompanyResult,
     NewTurn,
     OfficeBuildingEffect,
     PassivePurpleCardEffects,
@@ -212,6 +230,8 @@ export default class GamePage extends Vue {
 
     private waterTreatmentPlantModalVisible = false;
     private waterTreatmentPlantCard = -1;
+    private logisticsCompanyModalVisible = false;
+    private logisticsCompanyTargets: { player: number; card: number; }[] = [];
 
     private cardDb!: {
         [name in CardName]: Omit<CardInterface, 'bought'>;
@@ -1357,6 +1377,64 @@ export default class GamePage extends Vue {
         this.waterTreatmentPlantCard = value as CardName;
     }
 
+    logisticsCompanyCount () {
+        return this.thisPlayer.cards.find(cc => cc.card.cardName === CardName.LogisticsCompany)?.count || 0;
+    }
+
+    logisticsCompanyModalOk () {
+        // basically none of the values can be -1 (default), and the player must have enough of those cards selected
+        const cardCounts: {[card: number]: number} = {};
+        let valid = true;
+        this.logisticsCompanyTargets.forEach(({ player, card }) => {
+            if (player === -1 || card === -1) {
+                valid = false;
+                return false;
+            }
+            cardCounts[card] = (cardCounts[card] || 0) + 1;
+        });
+        if (!valid) {
+            return;
+        }
+        Object.entries(cardCounts).forEach(([cardIndex, count]) => {
+            const realCount = this.thisPlayer.cards.find(({ card }) => card.cardName === Number(cardIndex))!.count;
+            if (count > realCount) {
+                valid = false;
+                return false;
+            }
+        });
+        if (!valid) {
+            return;
+        }
+        this.logisticsCompanyModalVisible = false;
+
+        this.socket.emit(events.output.LOGISTIC_COMPANY_INPUT, {
+            game: this.gameSlug,
+            playerId: this.thisPlayer.id,
+            args: this.logisticsCompanyTargets
+        });
+
+        this.logisticsCompanyTargets = [];
+    }
+
+    onLogisticsCompanyPlayerSelect (index: number, value: number) {
+        // the array is filled with empty objects when opening the modal
+        this.logisticsCompanyTargets[index - 1].player = value;
+    }
+
+    get logisticCompanyPlayers () {
+        return this.otherPlayers.map(({ id, name }) => ({ id, name }));
+    }
+
+    onLogisticsCompanyCardSelect (index: number, value: number) {
+        this.logisticsCompanyTargets[index - 1].card = value;
+    }
+
+    get logisticCompanyCards () {
+        return this.thisPlayer.cards
+            .filter(({ card, active }) => card.color !== CardColor.Purple && active)
+            .map(cc => ({ id: cc.card.cardName, name: cc.card.name, count: cc.count }));
+    }
+
     onActivePurpleCardWait () {
         /*
             this will get ugly
@@ -1522,7 +1600,9 @@ export default class GamePage extends Vue {
                 if (data.wineryToggled) {
                     this.toggleCardActive(p, CardName.Winery);
                 }
-                this.currentTurnPhase = TurnPhase.PurpleCards;
+                if (!this.playerHasCard(this.thisPlayer, CardName.LogisticsCompany)) {
+                    this.currentTurnPhase = TurnPhase.PurpleCards;
+                }
 
                 /* server side: after green cards are done, check if player has some purple cards that NEED user input (and are actually triggered)
                         exactly 50:50, 4 cards active, 4 cards passive
@@ -1532,6 +1612,30 @@ export default class GamePage extends Vue {
                     after looking at the cards - if passive and active cards are activated (6 and 8 rolls), doesn't matter in which order they're activated
                     so just check for passive purple cards, trigger them if possible, then check for active cards, and possibly wait for player action
                 */
+            })
+            .on(events.input.LOGISTICS_COMPANY_WAIT, () => {
+                this.logisticsCompanyTargets = [];
+                const count = this.thisPlayer.cards.find(({ card }) => card.cardName === CardName.LogisticsCompany)!.count;
+                for (let i = 0; i < count; i += 1) {
+                    this.logisticsCompanyTargets.push({ player: -1, card: -1 });
+                }
+                this.logisticsCompanyModalVisible = true;
+            })
+            .on(events.input.LOGISTICS_COMPANY_RESULT, (data: LogisticsCompanyResult) => {
+                // TODO: remove given cards from player, give them to target player
+                const sourcePlayer = this.findPlayer(data.sourcePlayer);
+                const strings: string[] = [];
+                data.playersAndCards.forEach(({ player, card }) => {
+                    const targetPlayer = this.findPlayer(player);
+
+                    this.removeCardFromPlayer(sourcePlayer, card);
+                    this.addCardToPlayer(targetPlayer, card, false);
+
+                    sourcePlayer.money += 4;
+                    strings.push(`${sourcePlayer.name} odevzdal/a svoji kartu ${this.cardName(card)} hráči ${targetPlayer.name} a získává ${this.formatCoins(4)}.`);
+                });
+                this.log(strings.join(' '), true);
+                this.currentTurnPhase = TurnPhase.PurpleCards;
             })
             .on(events.input.PASSIVE_PURPLE_CARD_EFFECTS, (data: PassivePurpleCardEffects) => {
                 Object.entries(data.result).forEach(([id, result]) => {

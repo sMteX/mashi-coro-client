@@ -60,6 +60,10 @@ export interface GreenCardEffects {
     // whether to toggle (activate/deactivate) Winery for given player
     wineryToggled: boolean;
 }
+export interface LogisticsCompanyResult {
+    sourcePlayer: number;
+    playersAndCards: { player: number; card: CardName }[];
+}
 export interface PassivePurpleCardEffects {
     player: number;
     result: {
