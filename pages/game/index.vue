@@ -470,7 +470,7 @@ export default class GamePage extends Vue {
     }
 
     get isAddTwoToRollVisible (): boolean {
-        return this.playerHasCard(this.thisPlayer, CardName.Port);
+        return this.playerHasCard(this.thisPlayer, CardName.Port) && this.playerHasCard(this.thisPlayer, CardName.Station);
     }
 
     get isEndTurnVisible (): boolean {

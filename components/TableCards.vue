@@ -29,7 +29,7 @@ const TableCardsProps = Vue.extend({
         },
         cards: {
             required: true,
-            type: Object as () => CardCount[]
+            type: Array
         }
     }
 });
@@ -47,19 +47,19 @@ export default class TableCards extends TableCardsProps {
     }
 
     get purpleCards (): CardCount[] {
-        return this.cards
+        return (this.cards as CardCount[])
             .filter(({ card }) => card.color === CardColor.Purple)
             .sort(({ card: cardA }, { card: cardB }) => this.avg(cardA.triggerNumbers) - this.avg(cardB.triggerNumbers));
     }
 
     get lowCards (): CardCount[] {
-        return this.cards
+        return (this.cards as CardCount[])
             .filter(({ card }) => card.color !== CardColor.Purple && this.avg(card.triggerNumbers) <= 6)
             .sort(({ card: cardA }, { card: cardB }) => this.avg(cardA.triggerNumbers) - this.avg(cardB.triggerNumbers));
     }
 
     get highCards (): CardCount[] {
-        return this.cards
+        return (this.cards as CardCount[])
             .filter(({ card }) => card.color !== CardColor.Purple && this.avg(card.triggerNumbers) > 6)
             .sort(({ card: cardA }, { card: cardB }) => this.avg(cardA.triggerNumbers) - this.avg(cardB.triggerNumbers));
     }
