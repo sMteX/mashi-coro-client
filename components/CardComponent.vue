@@ -4,37 +4,37 @@
             // - dominant closeup
             div.card(v-if="props.showDominantCloseup")
                 div.inner(:class="props.backgroundClass")
-                    a-row.name(type="flex" justify="center")
+                    div.name.ant-row-flex.ant-row-flex-center
                         // - workaround - functional components can't import components like others usually do
                         component(:is="injections.components.CardSymbol" :symbol="props.card.symbol" :color="props.card.color" :bought="props.card.bought")
                         | {{ props.card.name }}
-                    a-row.empty-space
-                    a-row.text-center.bottom-row(type="flex" align="middle")
-                        a-col(span=6) {{ props.card.cost }}
-                        a-col(span=18)
+                    div.empty-space.ant-row
+                    div.text-center.bottom-row.ant-row-flex.ant-row-flex-middle
+                        div.ant-col-6 {{ props.card.cost }}
+                        div.ant-col-18
                             component(:is="injections.components.CardDescription" :text="props.card.description")
             // - closeup
             div.card(v-else)
                 div.inner(:class="props.backgroundClass")
-                    a-row(type="flex" justify="center") {{ props.card.triggerNumbers.join(', ') }}
-                    a-row.name(type="flex" justify="center")
+                    div.ant-row-flex.ant-row-flex-center {{ props.card.triggerNumbers.join(', ') }}
+                    div.name.ant-row-flex.ant-row-flex-center
                         component(:is="injections.components.CardSymbol" :symbol="props.card.symbol" :color="props.card.color")
                         | {{ props.card.name }}
-                    a-row.empty-space
-                    a-row.text-center.bottom-row
-                        a-col(span=6)
-                            a-row
+                    div.empty-space.ant-row
+                    div.text-center.bottom-row.ant-row
+                        div.ant-col-6
+                            div.ant-row
                                 component(:is="injections.components.MultiPlayerIcon" v-if="props.triggeredByAll")
                                 component(:is="injections.components.SinglePlayerIcon" v-else)
-                            a-row {{ props.card.cost }}
-                        a-col(span=18)
-                            a-row
+                            div.ant-row {{ props.card.cost }}
+                        div.ant-col-18
+                            div.ant-row
                                 component(:is="injections.components.CardDescription" :text="props.card.description")
         // - miniature
         div.card-stack(:class="{ deactivated: !props.active }")
             div(v-for="index in props.cardCount-1" :class="`card_${index}`" :key="index")
             div.card-miniature(:class="{ clickable: props.clickable }" @click="props.clickEvent")
-                a-row.inner(type="flex" justify="center" align="middle" :class="props.backgroundClass")
+                div.inner.ant-row-flex.ant-row-flex-center.ant-row-flex-middle(:class="props.backgroundClass")
                     div.text-center(v-if="props.card.color !== 4") {{ props.card.triggerNumbers.join(', ') }}
                     // - TODO: better display
                     div.miniature-name.text-center(v-if="showItCenter") {{ props.card.name }} ({{ props.itCenter }})
