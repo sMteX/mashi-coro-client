@@ -41,7 +41,7 @@
                     div.text-center(v-if="props.card.color !== 4")
                         | {{ props.card.triggerNumbers.join(', ') }}
                     // - TODO: better display
-                    div.miniature-name.text-center(v-if="showItCenter")
+                    div.miniature-name.text-center(v-if="props.showItCenter")
                         | {{ props.card.name }} ({{ props.itCenter }})
                     div.miniature-name.text-center(v-else)
                         | {{ props.card.name }}

@@ -429,22 +429,7 @@ export default class GamePage extends Vue {
     endTurn () {
         this.log('Tah ukončen.');
         if (!this.dummySetup) {
-            let useItCenter = false;
-            if (this.playerHasCard(this.thisPlayer, CardName.ItCenter) && this.thisPlayer.money > 0) {
-                this.$confirm({
-                    title: 'IT centrum',
-                    content: `Chcete přidat jednu minci na IT centrum? Právě máte ${this.formatCoins(this.thisPlayer.money)}. Na kartě máte momentálně ${this.formatCoins(this.thisPlayer.itCenterCoins)}.`,
-                    onOk: () => {
-                        useItCenter = true;
-                    },
-                    onCancel () {}
-                });
-            }
-            this.socket.emit(events.output.END_TURN, {
-                useItCenter,
-                game: this.gameSlug,
-                playerId: this.thisPlayer.id
-            });
+            this.emitEndTurn();
         }
     }
     // </editor-fold>
@@ -514,6 +499,35 @@ export default class GamePage extends Vue {
             .sort((a: ActionButton, b: ActionButton) => a.order - b.order);
     }
     // </editor-fold>
+
+    emitEndTurn () {
+        if (this.playerHasCard(this.thisPlayer, CardName.ItCenter) && this.thisPlayer.money > 0) {
+            this.$confirm({
+                title: 'IT centrum',
+                content: `Chcete přidat jednu minci na IT centrum? Právě máte ${this.formatCoins(this.thisPlayer.money)}. Na kartě máte momentálně ${this.formatCoins(this.thisPlayer.itCenterCoins)}.`,
+                onOk: () => {
+                    this.socket.emit(events.output.END_TURN, {
+                        useItCenter: true,
+                        game: this.gameSlug,
+                        playerId: this.thisPlayer.id
+                    });
+                },
+                onCancel: () => {
+                    this.socket.emit(events.output.END_TURN, {
+                        useItCenter: false,
+                        game: this.gameSlug,
+                        playerId: this.thisPlayer.id
+                    });
+                }
+            });
+        } else {
+            this.socket.emit(events.output.END_TURN, {
+                useItCenter: false,
+                game: this.gameSlug,
+                playerId: this.thisPlayer.id
+            });
+        }
+    }
 
     playerHasCard (player: Player, card: CardName): boolean {
         if (dominants.includes(card)) {
@@ -1713,6 +1727,9 @@ export default class GamePage extends Vue {
                 data.drawnCards.forEach(card => this.addCardToTable(card));
 
                 this.currentTurnPhase = TurnPhase.EndTurn;
+                if (this.isPlayerOnTurn) {
+                    setTimeout(() => this.emitEndTurn(), 1000);
+                }
             })
             .on(events.input.IT_CENTER_COIN, (data: ItCenterCoin) => {
                 const player = this.findPlayer(data.player);
