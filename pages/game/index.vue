@@ -56,7 +56,7 @@
             :keyboard="false"
             @ok="logisticsCompanyModalOk")
             p Pro každou svoji kartu Přepravní firma určete protihráče, a jakou svoji kartu mu odevzdáte (můžete odevzdat i samotnou Přepravní firmu). Za každou takto odevzdanou kartu získáte 4 mince z banku.
-            a-row(v-for="selectIndex in logisticsCompanyCount" :key="selectIndex")
+            div.ant-row(v-for="selectIndex in logisticsCompanyCount" :key="selectIndex")
                 a-select(size="large" placeholder="Vyberte protihráče" @change="onLogisticsCompanyPlayerSelect(selectIndex, $event)" style="width: 300px; margin-bottom: 20px")
                     a-select-option(v-for="(player, index) in logisticCompanyPlayers" :key="index" :value="player.id")
                         | {{ player.name }}
@@ -64,59 +64,59 @@
                     a-select-option(v-for="(cardCount, index) in logisticCompanyCards" :key="index" :value="cardCount.card")
                         | {{ cardCount.name }} ({{ cardCount.count }})
 
-        a-col.game-container(span=18, offset=3)
-            a-row(type="flex" justify="center")
+        div.game-container.ant-col-18.ant-col-offset-3
+            div.ant-row-flex.ant-row-flex-center
                 MachiKoroLogo
-            a-row
+            div.ant-row
                 h1 Hra
-                a-row
+                div.ant-row
                     h3 Hráči:
                     ul
                         li(v-for="player in players")
                             span {{ player.name }}
-                a-row(v-if="messages.length > 0")
+                div.ant-row(v-if="messages.length > 0")
                     h3 Zprávy:
                     ul
                         li(v-for="message in lastMessages") {{ message }}
-                a-row.delimiter
-                a-row.game(v-if="loaded")
-                    a-row
+                div.delimiter.ant-row
+                div.game.ant-row(v-if="loaded")
+                    div.ant-row
                         h2(v-show="isPlayerOnTurn") Jste na tahu.
                         h2(v-show="!isPlayerOnTurn") Právě je na tahu hráč {{ currentPlayer.name }}
                         p Fáze tahu: {{ turnPhases[currentTurnPhase] }}
-                    a-row
+                    div.ant-row
                         h3 Akce
                         a-button.action-button(v-for="(button, index) in buttons" v-show="button.isVisible()" :key="index" :disabled="!button.isActive()" @click="button.handler") {{ button.text }}
-                    a-row
+                    div.ant-row
                         h3 Kostky
                         div(:style="{ height: '50px' }")
                             div(v-show="currentTurnPhase >= 1")
                                 Dice(ref="dice1")
                             div(v-show="currentTurnPhase >= 1 && chosenAmountOfDice === 2")
                                 Dice(ref="dice2")
-                    a-row.delimiter
-                    a-row
-                        a-col(span=12)
-                            a-row
-                                a-row
+                    div.delimiter.ant-row
+                    div.ant-row
+                        div.ant-col-12
+                            div.ant-row
+                                div.ant-row
                                     h2 Vy
-                                a-row
+                                div.ant-row
                                     p Peníze: {{ thisPlayer.money }}
-                                a-row
+                                div.ant-row
                                     // - dominants
-                                    a-row(type="flex" justify="start" :gutter=16)
+                                    div.ant-row-flex.ant-row-flex-start.gutter-16
                                         Card(v-for="(card, index) in playerCards(thisPlayer)[0]" :info="card" :key="index" :clickable="isCardClickable(card)" :clickEvent="buyCard" :location="cardLocation.Player")
                                     // - normal cards
-                                    a-row(type="flex" justify="start" :gutter=16 v-for="(row, rowIndex) in playerCards(thisPlayer).slice(1)" :key="rowIndex")
+                                    div.ant-row-flex.ant-row-flex-start.gutter-16(v-for="(row, rowIndex) in playerCards(thisPlayer).slice(1)" :key="rowIndex")
                                         Card(v-for="(card, index) in row" :info="card" :key="index" :location="cardLocation.Player" :itCenter="thisPlayer.itCenterCoins")
-                            a-row.delimiter
-                            a-row
-                                a-row
+                            div.delimiter.ant-row
+                            div.ant-row
+                                div.ant-row
                                     h3 Dostupné karty:
                                 TableCards(:cards="table.buyableCards" :clickableCheck="isCardClickable" :clickEvent="buyCard")
                                     // -a-row(type="flex" justify="space-around" v-for="(row, rowIndex) in buyableCardsTable" :key="rowIndex")
                                         Card(v-for="(card, index) in row" :info="card" :key="index" :clickable="isCardClickable(card)" :clickEvent="buyCard" :location="cardLocation.Table")
-                        a-col(span=11 offset=1)
+                        div.ant-col-11.ant-col-offset-1
                             PlayerCards(v-for="(player, index) in otherPlayers" :key="index" :player="player")
 
 </template>
@@ -1814,7 +1814,10 @@ export default class GamePage extends Vue {
     margin-bottom: 15px;
     /*border-bottom: 1px lightgray solid;*/
 }
-
+.gutter-16 {
+    margin-left: -8px;
+    margin-right: -8px;
+}
 .container {
     margin: 0 auto;
     min-height: 100vh;

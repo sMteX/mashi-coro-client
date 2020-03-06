@@ -20,18 +20,18 @@
             br
             a-input(v-model="joinNameDialog.temp" autoFocus @pressEnter="joinNameDialogOk")
 
-        a-col.game-container(span=14, offset=5)
-            a-row(type="flex" justify="center")
+        div.game-container.ant-col-14.ant-col-offset-5
+            div.ant-row-flex.ant-row-flex-center
                 MachiKoroLogo
-            a-row.lobby
-                a-col(span=16 offset=4)
-                    a-row(type="flex" justify="space-around")
+            div.lobby.ant-row
+                div.ant-col-16.ant-col-offset-4
+                    div.ant-row-flex.ant-row-flex-space-around
                         a-button(size="large" @click="createGame" v-if="gameSlug === ''") Vytvořit hru
                         a-button(size="large" @click="confirmReady" v-if="isPlayable") Jsem připraven
                         a-button(size="large" @click="declineReady" v-if="isPlayable" type="danger") Nejsem připraven
                         a-button(size="large" @click="startGame" v-if="canStartGame" type="primary") Spustit hru
                         a-button(size="large" @click="copySlug" v-if="isOwner") Zkopíruj kód hry
-            a-row(v-if="players.length > 0")
+            div.ant-row(v-if="players.length > 0")
                 h3 Hráči:
                 ul
                     li(v-for="player in players")
@@ -39,7 +39,7 @@
                         |
                         span(v-if="player.ready" :style="{ color: 'green' }") připraven
                         span(v-else :style="{ color: 'red' }") nepřipraven
-            a-row(v-if="messages.length > 0")
+            div.ant-row(v-if="messages.length > 0")
                 h3 Zprávy:
                 ul
                     li(v-for="message in messages") {{ message }}
