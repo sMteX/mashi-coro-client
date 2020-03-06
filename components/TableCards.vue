@@ -1,12 +1,12 @@
 <template lang="pug">
-    a-row
-        a-col.purple-cards(span="4")
-            a-row(v-for="(card, index) in purpleCards" :key="index")
+    div.ant-row
+        div.purple-cards.ant-col-4
+            div.ant-row(v-for="(card, index) in purpleCards" :key="index")
                 Card(:info="card" :location="cardLocation.Table" :clickable="clickableCheck(card)" :clickEvent="clickEvent")
-        a-col(span="20")
-            a-row.low-row(type="flex" justify="space-around")
+        div.ant-col-20
+            div.low-row.ant-row-flex.ant-row-flex-space-around
                 Card(v-for="(card, index) in lowCards" :key="index" :info="card" :location="cardLocation.Table" :clickable="clickableCheck(card)" :clickEvent="clickEvent")
-            a-row(type="flex" justify="space-around")
+            div.ant-row-flex.ant-row-flex-space-around
                 Card(v-for="(card, index) in highCards" :key="index" :info="card" :location="cardLocation.Table" :clickable="clickableCheck(card)" :clickEvent="clickEvent")
 
 </template>

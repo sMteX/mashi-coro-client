@@ -10,13 +10,15 @@
                         | {{ props.card.name }}
                     div.empty-space.ant-row
                     div.text-center.bottom-row.ant-row-flex.ant-row-flex-middle
-                        div.ant-col-6 {{ props.card.cost }}
+                        div.ant-col-6
+                            | {{ props.card.cost }}
                         div.ant-col-18
                             component(:is="injections.components.CardDescription" :text="props.card.description")
             // - closeup
             div.card(v-else)
                 div.inner(:class="props.backgroundClass")
-                    div.ant-row-flex.ant-row-flex-center {{ props.card.triggerNumbers.join(', ') }}
+                    div.ant-row-flex.ant-row-flex-center
+                        | {{ props.card.triggerNumbers.join(', ') }}
                     div.name.ant-row-flex.ant-row-flex-center
                         component(:is="injections.components.CardSymbol" :symbol="props.card.symbol" :color="props.card.color")
                         | {{ props.card.name }}
@@ -26,7 +28,8 @@
                             div.ant-row
                                 component(:is="injections.components.MultiPlayerIcon" v-if="props.triggeredByAll")
                                 component(:is="injections.components.SinglePlayerIcon" v-else)
-                            div.ant-row {{ props.card.cost }}
+                            div.ant-row
+                                | {{ props.card.cost }}
                         div.ant-col-18
                             div.ant-row
                                 component(:is="injections.components.CardDescription" :text="props.card.description")
@@ -35,11 +38,15 @@
             div(v-for="index in props.cardCount-1" :class="`card_${index}`" :key="index")
             div.card-miniature(:class="{ clickable: props.clickable }" @click="props.clickEvent")
                 div.inner.ant-row-flex.ant-row-flex-center.ant-row-flex-middle(:class="props.backgroundClass")
-                    div.text-center(v-if="props.card.color !== 4") {{ props.card.triggerNumbers.join(', ') }}
+                    div.text-center(v-if="props.card.color !== 4")
+                        | {{ props.card.triggerNumbers.join(', ') }}
                     // - TODO: better display
-                    div.miniature-name.text-center(v-if="showItCenter") {{ props.card.name }} ({{ props.itCenter }})
-                    div.miniature-name.text-center(v-else) {{ props.card.name }}
-                    div.text-center(v-if="props.showCost") {{ props.card.cost }}
+                    div.miniature-name.text-center(v-if="showItCenter")
+                        | {{ props.card.name }} ({{ props.itCenter }})
+                    div.miniature-name.text-center(v-else)
+                        | {{ props.card.name }}
+                    div.text-center(v-if="props.showCost")
+                        | {{ props.card.cost }}
 </template>
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';

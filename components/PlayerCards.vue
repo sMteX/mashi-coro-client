@@ -1,11 +1,11 @@
 <template lang="pug">
-    a-row
-        a-row
+    div.ant-row
+        div.ant-row
             h2 {{ player.name }}
-        a-row
+        div.ant-row
             p Peníze: {{ player.money }}
-        a-row
-            a-row(type="flex" justify="start" :gutter=16 v-for="(row, rowIndex) in playerCards" :key="rowIndex")
+        div.ant-row
+            div.ant-row-flex.ant-row-flex-start.gutter-16(v-for="(row, rowIndex) in playerCards" :key="rowIndex")
                 Card(v-for="(card, index) in row" :info="card" :key="index" :location="cardLocation.OtherPlayer" :itCenter="player.itCenterCoins")
 </template>
 
@@ -56,5 +56,8 @@ export default class PlayerCards extends PlayerCardProps {
 </script>
 
 <style scoped>
-
+.gutter-16 {
+    margin-left: -8px;
+    margin-right: -8px;
+}
 </style>
