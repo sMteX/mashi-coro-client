@@ -61,7 +61,7 @@
                     a-select-option(v-for="(player, index) in logisticCompanyPlayers" :key="index" :value="player.id")
                         | {{ player.name }}
                 a-select(size="large" placeholder="Vyberte svoji kartu" @change="onLogisticsCompanyCardSelect(selectIndex, $event)" style="width: 300px; margin-bottom: 20px")
-                    a-select-option(v-for="(cardCount, index) in logisticCompanyCards" :key="index" :value="cardCount.card")
+                    a-select-option(v-for="(cardCount, index) in logisticCompanyCards" :key="index" :value="cardCount.id")
                         | {{ cardCount.name }} ({{ cardCount.count }})
 
         div.game-container.ant-col-18.ant-col-offset-3
@@ -86,14 +86,13 @@
                         p Fáze tahu: {{ turnPhases[currentTurnPhase] }}
                     div.ant-row
                         h3 Akce
-                        a-button.action-button(v-for="(button, index) in buttons" v-show="button.isVisible()" :key="index" :disabled="!button.isActive()" @click="button.handler") {{ button.text }}
+                        button.action-button.ant-btn(v-for="(button, index) in buttons" :key="index" v-show="button.isVisible()" :disabled="!button.isActive()" @click="button.handler") {{ button.text }}
+                        // - a-button.action-button(v-for="(button, index) in buttons" v-show="button.isVisible()" :key="index" :disabled="!button.isActive()" @click="button.handler") {{ button.text }}
                     div.ant-row
                         h3 Kostky
-                        div(:style="{ height: '50px' }")
-                            div(v-show="currentTurnPhase >= 1")
-                                Dice(ref="dice1")
-                            div(v-show="currentTurnPhase >= 1 && chosenAmountOfDice === 2")
-                                Dice(ref="dice2")
+                        div.ant-row-flex.ant-row-flex-start.gutter-16(:style="{ height: '50px' }")
+                            Dice(ref="dice1" v-show="currentTurnPhase >= 1")
+                            Dice(ref="dice2" v-show="currentTurnPhase >= 1 && chosenAmountOfDice === 2")
                     div.delimiter.ant-row
                     div.ant-row
                         div.ant-col-12
@@ -332,12 +331,12 @@ export default class GamePage extends Vue {
 
     buyCard (card: CardName) {
         // this shouldn't get called in wrong times, no need for checks?
+        this.alreadyBought = true;
         this.socket.emit(events.output.BUY_CARD, {
             card,
             game: this.gameSlug,
             playerId: this.thisPlayer.id
         });
-        this.alreadyBought = true;
     }
 
     toggleCardActive (player: Player, card: CardName, newState?: boolean) {
@@ -394,6 +393,7 @@ export default class GamePage extends Vue {
     keepDice () {
         this.log('Kostky ponechány.');
         if (!this.dummySetup) {
+            this.alreadyUsedPort = true;
             this.alreadyUsedTransmitter = true; // technically "used", we used the CHOICE to not roll again
             this.socket.emit(events.output.END_ROLL, {
                 game: this.gameSlug,
@@ -416,7 +416,7 @@ export default class GamePage extends Vue {
     }
 
     addTwoToRoll () {
-        this.log('Added 2 to roll');
+        this.log('Přidáno 2 k hodu.');
         if (!this.dummySetup) {
             this.alreadyUsedPort = true;
             this.socket.emit(events.output.ADD_TWO, {
@@ -445,7 +445,7 @@ export default class GamePage extends Vue {
     }
 
     get isKeepDiceVisible (): boolean {
-        return this.playerHasCard(this.thisPlayer, CardName.Transmitter);
+        return this.playerHasCard(this.thisPlayer, CardName.Transmitter) || this.playerHasCard(this.thisPlayer, CardName.Port);
         // return true;
     }
 
@@ -490,7 +490,7 @@ export default class GamePage extends Vue {
     }
 
     get isEndTurnActive (): boolean {
-        return this.isPlayerOnTurn && this.currentTurnPhase > TurnPhase.PurpleCards;
+        return this.isPlayerOnTurn && this.currentTurnPhase > TurnPhase.PurpleCards && !this.alreadyBought;
     }
     // </editor-fold>
 
@@ -505,6 +505,8 @@ export default class GamePage extends Vue {
             this.$confirm({
                 title: 'IT centrum',
                 content: `Chcete přidat jednu minci na IT centrum? Právě máte ${this.formatCoins(this.thisPlayer.money)}. Na kartě máte momentálně ${this.formatCoins(this.thisPlayer.itCenterCoins)}.`,
+                keyboard: true,
+                maskClosable: true,
                 onOk: () => {
                     this.socket.emit(events.output.END_TURN, {
                         useItCenter: true,
@@ -1391,7 +1393,7 @@ export default class GamePage extends Vue {
         this.waterTreatmentPlantCard = value as CardName;
     }
 
-    logisticsCompanyCount () {
+    get logisticsCompanyCount () {
         return this.thisPlayer.cards.find(cc => cc.card.cardName === CardName.LogisticsCompany)?.count || 0;
     }
 
@@ -1693,7 +1695,7 @@ export default class GamePage extends Vue {
                         const currentPlayer = this.findPlayer(typedResult.currentPlayerId);
                         currentPlayer.money = typedResult.currentPlayerMoney;
                         this.players.forEach(player => this.toggleCardActive(player, typedResult.card, false));
-                        this.log(`Fialové karty: ${currentPlayer.name} postavil/a všechny karty ${this.cardName(cardEnum)} mimo provoz a za to získává ${this.formatCoins(typedResult.gain)}.`);
+                        this.log(`Fialové karty: ${currentPlayer.name} postavil/a všechny karty ${this.cardName(typedResult.card)} mimo provoz a za to získává ${this.formatCoins(typedResult.gain)}.`);
                     }
                 });
             })
