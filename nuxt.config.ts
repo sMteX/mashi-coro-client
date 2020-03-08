@@ -50,7 +50,10 @@ const nuxtConfig: Configuration = {
     /*
      ** Global CSS
      */
-    css: ['ant-design-vue/dist/antd.css'],
+    css: [
+        'ant-design-vue/dist/antd.css',
+        '@/assets/css/global.scss'
+    ],
     /*
      ** Plugins to load before mounting the App
      */

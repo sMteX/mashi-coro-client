@@ -92,7 +92,7 @@
                         h3 Kostky
                         div.ant-row-flex.ant-row-flex-start.gutter-16(:style="{ height: '50px' }")
                             Dice(ref="dice1" v-show="currentTurnPhase >= 1")
-                            Dice(ref="dice2" v-show="currentTurnPhase >= 1 && chosenAmountOfDice === 2")
+                            Dice(ref="dice2" v-show="currentTurnPhase >= 1 && chosenAmountOfDice === 2" second)
                     div.delimiter.ant-row
                     div.ant-row
                         div.ant-col-12
@@ -322,10 +322,10 @@ export default class GamePage extends Vue {
 
     rollDices (result1: number, result2?: number) {
         // @ts-ignore
-        this.$refs.dice1.changeValue(10, result1);
+        this.$refs.dice1.changeValue(result1);
         if (result2) {
             // @ts-ignore
-            this.$refs.dice2.changeValue(10, result2);
+            this.$refs.dice2.changeValue(result2);
         }
     }
 
@@ -1832,10 +1832,6 @@ export default class GamePage extends Vue {
     margin-top: 15px;
     margin-bottom: 15px;
     /*border-bottom: 1px lightgray solid;*/
-}
-.gutter-16 {
-    margin-left: -8px;
-    margin-right: -8px;
 }
 .container {
     margin: 0 auto;

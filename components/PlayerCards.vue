@@ -56,8 +56,4 @@ export default class PlayerCards extends PlayerCardProps {
 </script>
 
 <style scoped>
-.gutter-16 {
-    margin-left: -8px;
-    margin-right: -8px;
-}
 </style>
