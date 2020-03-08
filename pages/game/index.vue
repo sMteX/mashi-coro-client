@@ -10,12 +10,11 @@
             :keyboard="false"
             okText="Potvrdit"
             cancelText="Zrušit"
+            width="400px"
             @ok="tvStudioModalOk")
             p Vyberte hráče, kterému vezmete 5 mincí:
-            a-radio-group(v-model="tvStudioTarget")
-                a-radio(v-for="(player, index) in tvStudioModalTargets"
-                        :key="index"
-                        :value="player.id")
+            a-select(v-model="tvStudioTarget" size="large" style="width: 250px" placeholder="Vyberte hráče")
+                a-select-option(v-for="(player, index) in tvStudioModalTargets" :key="index" :value="player.id")
                     | {{ player.name }} - {{ formatCoins(player.money, true) }}
         a-modal(v-if="loaded"
             title="Kancelářská budova"
@@ -23,7 +22,8 @@
             okText="Potvrdit"
             cancelText="Zrušit"
             @ok="officeBuildingModalOk"
-            @cancel="officeBuildingModalCancel")
+            @cancel="officeBuildingModalCancel"
+            width="500px")
             p Vyberte svoji kartu a pak hráče a jeho kartu, které si navzájem vyměníte. Pokud kartu hrát nechcete, zrušte dialog:
             a-select(size="large" placeholder="Vyberte svoji kartu" @change="onOfficeBuildingSelectChange" style="width: 300px; margin-bottom: 20px")
                 a-select-option(v-for="(cardCount, index) in officeBuildingPlayerCards" :key="index" :value="cardCount.card.cardName")
@@ -40,9 +40,10 @@
             :maskClosable="false"
             :cancelButtonProps="{ props: { disabled: true } }"
             :keyboard="false"
-            @ok="waterTreatmentPlantModalOk")
+            @ok="waterTreatmentPlantModalOk"
+            width="500px")
             p Určete název objektu, který všichni hráči (i vy) postaví mimo provoz. Vy si vezmete 1 minci z banku za každý takto vyřazený objekt. Číslo v závorce udává, kolik takových objektů je právě ve hře u všech hráčů.
-            a-select(size="large" placeholder="Vyberte název objektu" @change="onWaterTreatmentPlantSelectChange" style="width: 300px; margin-bottom: 20px")
+            a-select(size="large" placeholder="Vyberte název objektu" @change="onWaterTreatmentPlantSelectChange" style="width: 300px")
                 a-select-option(v-for="(cardCount, index) in waterTreatmentPlantItems" :key="index" :value="cardCount.card")
                     | {{ cardCount.name }} ({{ cardCount.count }})
         a-modal(v-if="loaded"
@@ -54,13 +55,14 @@
             :maskClosable="false"
             :cancelButtonProps="{ props: { disabled: true } }"
             :keyboard="false"
-            @ok="logisticsCompanyModalOk")
+            @ok="logisticsCompanyModalOk"
+            width="550px")
             p Pro každou svoji kartu Přepravní firma určete protihráče, a jakou svoji kartu mu odevzdáte (můžete odevzdat i samotnou Přepravní firmu). Za každou takto odevzdanou kartu získáte 4 mince z banku.
-            div.ant-row(v-for="selectIndex in logisticsCompanyCount" :key="selectIndex")
-                a-select(size="large" placeholder="Vyberte protihráče" @change="onLogisticsCompanyPlayerSelect(selectIndex, $event)" style="width: 300px; margin-bottom: 20px")
+            div.ant-row(v-for="selectIndex in logisticsCompanyCount" :key="selectIndex" style="margin-bottom: 10px")
+                a-select(size="large" placeholder="Vyberte protihráče" @change="onLogisticsCompanyPlayerSelect(selectIndex, $event)" style="width: 200px; margin-right: 10px")
                     a-select-option(v-for="(player, index) in logisticCompanyPlayers" :key="index" :value="player.id")
                         | {{ player.name }}
-                a-select(size="large" placeholder="Vyberte svoji kartu" @change="onLogisticsCompanyCardSelect(selectIndex, $event)" style="width: 300px; margin-bottom: 20px")
+                a-select(size="large" placeholder="Vyberte svoji kartu" @change="onLogisticsCompanyCardSelect(selectIndex, $event)" style="width: 250px")
                     a-select-option(v-for="(cardCount, index) in logisticCompanyCards" :key="index" :value="cardCount.id")
                         | {{ cardCount.name }} ({{ cardCount.count }})
 

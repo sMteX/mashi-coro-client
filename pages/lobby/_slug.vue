@@ -1,23 +1,29 @@
 <template lang="pug">
     div
         // - dialogs - ugly but works best
-        a-modal(:title="createNameDialog.title"
+        a-modal(title="Vytvoření hry"
             :visible="createNameDialog.visible"
             okText="Potvrdit"
             cancelText="Zrušit"
             @ok="createNameDialogOk"
-            @cancel="hideDialog(createNameDialog)")
-            a-alert(v-if="createNameDialog.error" type="error" :message="createNameDialog.error" showIcon)
-            br
+            @cancel="hideDialog(createNameDialog)"
+            width="400px")
+            template(v-if="createNameDialog.error")
+                a-alert(type="error" :message="createNameDialog.error" showIcon)
+                br
+            p Zadejte svoje jméno
             a-input(v-model="createNameDialog.temp" autoFocus @pressEnter="createNameDialogOk")
-        a-modal(:title="joinNameDialog.title"
+        a-modal(title="Připojení ke hře"
             :visible="joinNameDialog.visible"
             okText="Potvrdit"
             cancelText="Zrušit"
             @ok="joinNameDialogOk"
-            @cancel="hideDialog(joinNameDialog)")
-            a-alert(v-if="joinNameDialog.error" type="error" :message="joinNameDialog.error" showIcon)
-            br
+            @cancel="hideDialog(joinNameDialog)"
+            width="400px")
+            template(v-if="joinNameDialog.error")
+                a-alert(type="error" :message="joinNameDialog.error" showIcon)
+                br
+            p Zadejte svoje jméno
             a-input(v-model="joinNameDialog.temp" autoFocus @pressEnter="joinNameDialogOk")
 
         div.game-container.ant-col-14.ant-col-offset-5
@@ -64,7 +70,6 @@ interface PlayerPair {
     ready: boolean;
 }
 interface Dialog {
-    title: string;
     temp: string;
     visible: boolean;
     result: string;
@@ -89,7 +94,6 @@ export default class LobbyPage extends Vue {
     private messages: string[] = [];
 
     private createNameDialog: Dialog = {
-        title: 'Zadejte svoje jméno',
         temp: '',
         visible: false,
         result: '',
@@ -97,7 +101,6 @@ export default class LobbyPage extends Vue {
     };
 
     private joinNameDialog: Dialog = {
-        title: 'Zadejte svoje jméno',
         temp: '',
         visible: false,
         result: '',
@@ -187,9 +190,9 @@ export default class LobbyPage extends Vue {
     }
 
     hideDialog (dialog: Dialog) {
+        dialog.visible = false;
         dialog.temp = '';
         dialog.error = '';
-        dialog.visible = false;
     }
 
     log (message: string) {
