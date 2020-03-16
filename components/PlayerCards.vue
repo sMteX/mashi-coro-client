@@ -1,12 +1,12 @@
 <template lang="pug">
-    a-row
-        a-row
+    div.ant-row
+        div.ant-row
             h2 {{ player.name }}
-        a-row
+        div.ant-row
             p Peníze: {{ player.money }}
-        a-row
-            a-row(type="flex" justify="start" :gutter=16 v-for="(row, rowIndex) in playerCards" :key="rowIndex")
-                Card(v-for="(card, index) in row" :info="card" :key="index" :location="cardLocation.OtherPlayer")
+        div.ant-row
+            div.ant-row-flex.ant-row-flex-start.gutter-16(v-for="(row, rowIndex) in playerCards" :key="rowIndex")
+                Card(v-for="(card, index) in row" :info="card" :key="index" :location="cardLocation.OtherPlayer" :itCenter="player.itCenterCoins")
 </template>
 
 <script lang="ts">
@@ -24,6 +24,7 @@ interface Player {
     cards: CardCount[];
     money: number;
     winningCards: CardCount[];
+    itCenterCoins: number;
 }
 
 const PlayerCardProps = Vue.extend({
@@ -55,5 +56,4 @@ export default class PlayerCards extends PlayerCardProps {
 </script>
 
 <style scoped>
-
 </style>

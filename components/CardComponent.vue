@@ -4,40 +4,49 @@
             // - dominant closeup
             div.card(v-if="props.showDominantCloseup")
                 div.inner(:class="props.backgroundClass")
-                    a-row.name(type="flex" justify="center")
+                    div.name.ant-row-flex.ant-row-flex-center
                         // - workaround - functional components can't import components like others usually do
                         component(:is="injections.components.CardSymbol" :symbol="props.card.symbol" :color="props.card.color" :bought="props.card.bought")
                         | {{ props.card.name }}
-                    a-row.empty-space
-                    a-row.text-center.bottom-row(type="flex" align="middle")
-                        a-col(span=6) {{ props.card.cost }}
-                        a-col(span=18)
+                    div.empty-space.ant-row
+                    div.text-center.bottom-row.ant-row-flex.ant-row-flex-middle
+                        div.ant-col-6
+                            | {{ props.card.cost }}
+                        div.ant-col-18
                             component(:is="injections.components.CardDescription" :text="props.card.description")
             // - closeup
             div.card(v-else)
                 div.inner(:class="props.backgroundClass")
-                    a-row(type="flex" justify="center") {{ props.card.triggerNumbers.join(', ') }}
-                    a-row.name(type="flex" justify="center")
+                    div.ant-row-flex.ant-row-flex-center
+                        | {{ props.card.triggerNumbers.join(', ') }}
+                    div.name.ant-row-flex.ant-row-flex-center
                         component(:is="injections.components.CardSymbol" :symbol="props.card.symbol" :color="props.card.color")
                         | {{ props.card.name }}
-                    a-row.empty-space
-                    a-row.text-center.bottom-row
-                        a-col(span=6)
-                            a-row
+                    div.empty-space.ant-row
+                    div.text-center.bottom-row.ant-row
+                        div.ant-col-6
+                            div.ant-row
                                 component(:is="injections.components.MultiPlayerIcon" v-if="props.triggeredByAll")
                                 component(:is="injections.components.SinglePlayerIcon" v-else)
-                            a-row {{ props.card.cost }}
-                        a-col(span=18)
-                            a-row
+                            div.ant-row
+                                | {{ props.card.cost }}
+                        div.ant-col-18
+                            div.ant-row
                                 component(:is="injections.components.CardDescription" :text="props.card.description")
         // - miniature
-        div.card-stack
+        div.card-stack(:class="{ deactivated: !props.active }")
             div(v-for="index in props.cardCount-1" :class="`card_${index}`" :key="index")
             div.card-miniature(:class="{ clickable: props.clickable }" @click="props.clickEvent")
-                a-row.inner(type="flex" justify="center" align="middle" :class="props.backgroundClass")
-                    div.text-center(v-if="props.card.color !== 4") {{ props.card.triggerNumbers.join(', ') }}
-                    div.miniature-name.text-center {{ props.card.name }}
-                    div.text-center(v-if="props.showCost") {{ props.card.cost }}
+                div.inner.ant-row-flex.ant-row-flex-center.ant-row-flex-middle(:class="props.backgroundClass")
+                    div.text-center(v-if="props.card.color !== 4")
+                        | {{ props.card.triggerNumbers.join(', ') }}
+                    // - TODO: better display
+                    div.miniature-name.text-center(v-if="props.showItCenter")
+                        | {{ props.card.name }} ({{ props.itCenter }})
+                    div.miniature-name.text-center(v-else)
+                        | {{ props.card.name }}
+                    div.text-center(v-if="props.showCost")
+                        | {{ props.card.cost }}
 </template>
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
@@ -75,9 +84,22 @@ const CardComponentProps = Vue.extend({
             required: true,
             type: Number
         },
+        active: {
+            required: true,
+            type: Boolean
+        },
         triggeredByAll: {
             required: true,
             type: Boolean
+        },
+        showItCenter: {
+            required: true,
+            type: Boolean
+        },
+        itCenter: {
+            required: false,
+            type: Number,
+            default: 0
         },
         showCost: {
             required: true,
@@ -102,8 +124,8 @@ export default class CardComponent extends CardComponentProps {}
 </script>
 
 <style scoped lang="scss">
-$card-mini-height: 120;
-$card-mini-width: 90;
+$card-mini-height: 130;
+$card-mini-width: 100;
 $card-overlay: 3;
 
 $card-height: 300;
@@ -168,6 +190,9 @@ $colors: (
     100% {
         opacity: 1;
     }
+}
+.deactivated {
+    transform: rotate(-90deg);
 }
 .clickable {
     cursor: pointer;

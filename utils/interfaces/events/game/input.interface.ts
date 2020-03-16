@@ -4,6 +4,7 @@ import { Card, CardName } from '~/utils/cards';
 export interface CardCount {
     card: Card;
     count: number;
+    active: boolean;
 }
 interface CardPairInput {
     card: CardName;
@@ -31,6 +32,10 @@ export interface DiceRollOutput {
     sum: number;
     transmitter: boolean;
 }
+export interface AddedTwo {
+    sum: number;
+    player: number;
+}
 export interface RedCardEffects {
     fromPlayer: number;
     result: {
@@ -52,6 +57,12 @@ export interface GreenCardEffects {
     player: number;
     newMoney: number;
     gains: number;
+    // whether to toggle (activate/deactivate) Winery for given player
+    wineryToggled: boolean;
+}
+export interface LogisticsCompanyResult {
+    sourcePlayer: number;
+    playersAndCards: { player: number; card: CardName }[];
 }
 export interface PassivePurpleCardEffects {
     player: number;
@@ -60,10 +71,11 @@ export interface PassivePurpleCardEffects {
             gains?: number;
             newMoney: number;
         }
-    }
+    },
+    parkActivated: boolean;
 }
 export interface ActivePurpleCardEffects {
-    results: { [card in CardName]?: OfficeBuildingEffect|TelevisionStudioEffect; }
+    results: { [card in CardName]?: OfficeBuildingEffect|TelevisionStudioEffect|WaterTreatmentPlantEffect; }
 }
 // subtypes for ActivePurpleCardEffects
 export interface OfficeBuildingEffect {
@@ -79,10 +91,22 @@ export interface TelevisionStudioEffect {
     targetPlayerMoney: number;
     gain: number;
 }
-// TODO: Water Treatment Effects
+export interface WaterTreatmentPlantEffect {
+    card: CardName;
+    currentPlayerId: number;
+    gain: number;
+    currentPlayerMoney: number;
+}
+export interface TownHallGain {
+    player: number;
+}
 export interface PlayerBoughtCard {
     player: number;
     card: CardName;
+    drawnCards: CardName[];
+}
+export interface ItCenterCoin {
+    player: number;
 }
 export interface AirportGain {
     player: number;
