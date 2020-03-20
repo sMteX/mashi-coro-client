@@ -14,6 +14,7 @@
             @ok="tvStudioModalOk")
             p Vyberte hráče, kterému vezmete 5 mincí:
             a-select(v-model="tvStudioTarget" size="large" style="width: 250px" placeholder="Vyberte hráče")
+                a-select-option(:value="-1" disabled hidden) Vyberte hráče
                 a-select-option(v-for="(player, index) in tvStudioModalTargets" :key="index" :value="player.id")
                     | {{ player.name }} - {{ formatCoins(player.money, true) }}
         a-modal(v-if="loaded"
@@ -138,7 +139,8 @@ import {
     DiceRollOutput,
     GameDataLoad,
     GreenCardEffects,
-    ItCenterCoin, LogisticsCompanyResult,
+    ItCenterCoin,
+    LogisticsCompanyResult,
     NewTurn,
     OfficeBuildingEffect,
     PassivePurpleCardEffects,
@@ -147,7 +149,8 @@ import {
     PlayerWonGame,
     RedCardEffects,
     TelevisionStudioEffect,
-    TownHallGain, WaterTreatmentPlantEffect
+    TownHallGain,
+    WaterTreatmentPlantEffect
 } from '~/utils/interfaces/events/game/input.interface';
 import PlayerCards from '~/components/PlayerCards.vue';
 import Card from '~/components/Card.vue';
@@ -353,12 +356,12 @@ export default class GamePage extends Vue {
     }
 
     isCardClickable ({ card }: CardCount): boolean {
-        let purpleCheck = true;
-        if (card.color === CardColor.Purple) {
-            purpleCheck = !this.playerHasCard(this.thisPlayer, card.cardName);
+        let purpleDominantCheck = true;
+        if (card.color === CardColor.Purple || card.color === CardColor.Dominant) {
+            purpleDominantCheck = !this.playerHasCard(this.thisPlayer, card.cardName);
         }
         return this.isPlayerOnTurn &&
-                purpleCheck &&
+                purpleDominantCheck &&
                 this.currentTurnPhase === TurnPhase.Build &&
                 !this.alreadyBought &&
                 this.thisPlayer.money >= card.cost;
