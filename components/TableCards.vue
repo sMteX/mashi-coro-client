@@ -1,12 +1,12 @@
 <template lang="pug">
     div.ant-row
-        div.purple-cards.ant-col-4
+        div.purple-cards.ant-col-3
             div.ant-row(v-for="(card, index) in purpleCards" :key="index")
                 Card(:info="card" :location="cardLocation.Table" :clickable="clickableCheck(card)" :clickEvent="clickEvent")
         div.ant-col-20
-            div.low-row.ant-row-flex.ant-row-flex-space-around
+            div.low-row.ant-row-flex.ant-row-flex-start
                 Card(v-for="(card, index) in lowCards" :key="index" :info="card" :location="cardLocation.Table" :clickable="clickableCheck(card)" :clickEvent="clickEvent")
-            div.ant-row-flex.ant-row-flex-space-around
+            div.ant-row-flex.ant-row-flex-start
                 Card(v-for="(card, index) in highCards" :key="index" :info="card" :location="cardLocation.Table" :clickable="clickableCheck(card)" :clickEvent="clickEvent")
 
 </template>
@@ -70,6 +70,7 @@ export default class TableCards extends TableCardsProps {
 <style scoped lang="scss">
 .purple-cards {
     padding-top: 40px;
+    min-width: 130px;
 }
 .low-row {
     margin-top: 20px;

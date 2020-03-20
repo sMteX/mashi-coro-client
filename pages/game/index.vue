@@ -90,7 +90,6 @@
                     div.ant-row
                         h3 Akce
                         button.action-button.ant-btn(v-for="(button, index) in buttons" :key="index" v-show="button.isVisible()" :disabled="!button.isActive()" @click="button.handler") {{ button.text }}
-                        // - a-button.action-button(v-for="(button, index) in buttons" v-show="button.isVisible()" :key="index" :disabled="!button.isActive()" @click="button.handler") {{ button.text }}
                     div.ant-row
                         h3 Kostky
                         div.ant-row-flex.ant-row-flex-start.gutter-16(:style="{ height: '50px' }")
@@ -98,28 +97,24 @@
                             Dice(ref="dice2" v-show="currentTurnPhase >= 1 && chosenAmountOfDice === 2" second)
                     div.delimiter.ant-row
                     div.ant-row
-                        div.ant-col-12
+                        div.ant-row
+                            h2 Vy
+                        div.ant-row
+                            p Peníze: {{ thisPlayer.money }}
+                        div.ant-row
+                            div.ant-row-flex.ant-row-flex-start.gutter-16(v-for="(row, rowIndex) in playerCards(thisPlayer)" :key="rowIndex")
+                                // - dominants
+                                template(v-if="rowIndex === 0")
+                                    Card(v-for="(card, index) in row" :info="card" :key="index" :clickable="isCardClickable(card)" :clickEvent="buyCard" :location="cardLocation.Player")
+                                // - normal cards
+                                template(v-else)
+                                    Card(v-for="(card, index) in row" :info="card" :key="index" :location="cardLocation.Player" :itCenter="thisPlayer.itCenterCoins")
+                        div.delimiter.ant-row
+                        div.ant-row
                             div.ant-row
-                                div.ant-row
-                                    h2 Vy
-                                div.ant-row
-                                    p Peníze: {{ thisPlayer.money }}
-                                div.ant-row
-                                    // - dominants
-                                    div.ant-row-flex.ant-row-flex-start.gutter-16
-                                        Card(v-for="(card, index) in playerCards(thisPlayer)[0]" :info="card" :key="index" :clickable="isCardClickable(card)" :clickEvent="buyCard" :location="cardLocation.Player")
-                                    // - normal cards
-                                    div.ant-row-flex.ant-row-flex-start.gutter-16(v-for="(row, rowIndex) in playerCards(thisPlayer).slice(1)" :key="rowIndex")
-                                        Card(v-for="(card, index) in row" :info="card" :key="index" :location="cardLocation.Player" :itCenter="thisPlayer.itCenterCoins")
-                            div.delimiter.ant-row
-                            div.ant-row
-                                div.ant-row
-                                    h3 Dostupné karty:
-                                TableCards(:cards="table.buyableCards" :clickableCheck="isCardClickable" :clickEvent="buyCard")
-                                    // -a-row(type="flex" justify="space-around" v-for="(row, rowIndex) in buyableCardsTable" :key="rowIndex")
-                                        Card(v-for="(card, index) in row" :info="card" :key="index" :clickable="isCardClickable(card)" :clickEvent="buyCard" :location="cardLocation.Table")
-                        div.ant-col-11.ant-col-offset-1
-                            PlayerCards(v-for="(player, index) in otherPlayers" :key="index" :player="player")
+                                h3 Dostupné karty:
+                            TableCards(:cards="table.buyableCards" :clickableCheck="isCardClickable" :clickEvent="buyCard")
+                        PlayerCards(v-for="(player, index) in otherPlayers" :key="index" :player="player")
 
 </template>
 
