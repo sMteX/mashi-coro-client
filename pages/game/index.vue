@@ -68,8 +68,7 @@
                         | {{ cardCount.name }} ({{ cardCount.count }})
 
         div.ant-col-4.sidebar-container(v-if="loaded")
-            div.sidebar-indicator(:class="{ 'indicator-blue': isPlayerOnTurn, 'indicator-gray': !isPlayerOnTurn }")
-            div.sidebar
+            div.sidebar(:class="{ 'sidebar-blue': isPlayerOnTurn, 'sidebar-gray': !isPlayerOnTurn }")
                 div.sidebar-content
                     div.ant-row
                         h2(v-show="isPlayerOnTurn") Jste na tahu.
@@ -456,7 +455,8 @@ export default class GamePage extends Vue {
     }
 
     get isKeepDiceVisible (): boolean {
-        return this.playerHasCard(this.thisPlayer, CardName.Transmitter) || this.playerHasCard(this.thisPlayer, CardName.Port);
+        return this.playerHasCard(this.thisPlayer, CardName.Transmitter) ||
+            (this.playerHasCard(this.thisPlayer, CardName.Port) && this.playerHasCard(this.thisPlayer, CardName.Station));
         // return true;
     }
 
@@ -1830,35 +1830,25 @@ export default class GamePage extends Vue {
 </script>
 
 <style lang="scss">
-$indicator-width: 10px;
 
 .sidebar-container {
     width: 230px;
 }
-.sidebar-indicator {
-    position: fixed;
-    top: 0;
-    bottom: 0;
-    height: 100%;
-    width: $indicator-width;
-
-    &.indicator-gray {
-        background-color: gray;
-    }
-    &.indicator-blue {
-        background-color: dodgerblue;
-    }
-}
 .sidebar {
-    background-color: #d1f0ff;
     position: fixed;
     top: 0;
-    left: $indicator-width;
+    left: 0;
     bottom: 0;
     height: 100%;
     width: 230px; // about col-4 on notebook (looks decently narrow)
     padding: 15px;
 
+    &.sidebar-gray {
+        background-color: lightgray;
+    }
+    &.sidebar-blue {
+        background-color: #89c5ff;
+    }
     .action-button {
         width: 130px;
         margin-bottom: 10px;
@@ -1871,7 +1861,7 @@ $indicator-width: 10px;
     /*text-align: left;*/
 }
 .game-container {
-    margin-left: calc(#{$indicator-width} + 30px);
+    margin-left: 40px;
     margin-bottom: 50px;
 }
 .action-button {
