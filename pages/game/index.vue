@@ -67,9 +67,33 @@
                     a-select-option(v-for="(cardCount, index) in logisticCompanyCards" :key="index" :value="cardCount.id")
                         | {{ cardCount.name }} ({{ cardCount.count }})
 
-        div.game-container.ant-col-18.ant-col-offset-3
-            div.ant-row-flex.ant-row-flex-center
-                MachiKoroLogo
+        div.ant-col-4.sidebar-container(v-if="loaded")
+            div.sidebar-indicator(:class="{ 'indicator-blue': isPlayerOnTurn, 'indicator-gray': !isPlayerOnTurn }")
+            div.sidebar
+                div.sidebar-content
+                    div.ant-row
+                        h2(v-show="isPlayerOnTurn") Jste na tahu.
+                        h2(v-show="!isPlayerOnTurn") Hráč: {{ currentPlayer.name }}
+                        p Fáze tahu: {{ turnPhases[currentTurnPhase] }}
+                    div.ant-row
+                        h3 Akce
+                        div.ant-row-flex.ant-row-flex-center
+                            button.action-button.ant-btn(v-for="(button, index) in buttons" :key="index" v-show="button.isVisible()" :disabled="!button.isActive()" @click="button.handler") {{ button.text }}
+                    div.ant-row.delimiter
+                    div.ant-row
+                        h3 Kostky
+                        div.ant-row-flex.ant-row-flex-start.gutter-16(:style="{ height: '50px' }")
+                            Dice(ref="dice1" v-show="currentTurnPhase >= 1")
+                            Dice(ref="dice2" v-show="currentTurnPhase >= 1 && chosenAmountOfDice === 2" second)
+                    div.ant-row.delimiter
+                    div.ant-row
+                        h3 Peníze
+                        ul
+                            li Vy: {{ thisPlayer.money }}
+                            li(v-for="(player, i) in otherPlayers" :key="i") {{ player.name }}: {{ player.money }}
+        div.game-container.ant-col-18(:class="{ 'ant-col-offset-4': !loaded }")
+            div.ant-row
+                MachiKoroLogo.logo
             div.ant-row
                 h1 Hra
                 div.ant-row
@@ -83,19 +107,6 @@
                         li(v-for="message in lastMessages") {{ message }}
                 div.delimiter.ant-row
                 div.game.ant-row(v-if="loaded")
-                    div.ant-row
-                        h2(v-show="isPlayerOnTurn") Jste na tahu.
-                        h2(v-show="!isPlayerOnTurn") Právě je na tahu hráč {{ currentPlayer.name }}
-                        p Fáze tahu: {{ turnPhases[currentTurnPhase] }}
-                    div.ant-row
-                        h3 Akce
-                        button.action-button.ant-btn(v-for="(button, index) in buttons" :key="index" v-show="button.isVisible()" :disabled="!button.isActive()" @click="button.handler") {{ button.text }}
-                    div.ant-row
-                        h3 Kostky
-                        div.ant-row-flex.ant-row-flex-start.gutter-16(:style="{ height: '50px' }")
-                            Dice(ref="dice1" v-show="currentTurnPhase >= 1")
-                            Dice(ref="dice2" v-show="currentTurnPhase >= 1 && chosenAmountOfDice === 2" second)
-                    div.delimiter.ant-row
                     div.ant-row
                         div.ant-row
                             h2 Vy
@@ -288,19 +299,19 @@ export default class GamePage extends Vue {
     }
 
     mounted () {
-        // this.dummySetup = true;
+        this.dummySetup = true;
         // without it is temporarily allowed through dummy data
-        // this.useDummyData();
+        this.useDummyData();
         // TODO: redirect if player didn't come from lobby (or maybe just don't use pages for this, but instead giant components that just get switched?)
-        this.socket = io.connect(
-            `${process.env.serverUrl}/${events.namespaceName}`
-        );
-        this.gameSlug = this.$route.query.id as string;
-        this.setupHandlers();
-        this.socket.emit(events.output.PLAYER_CONNECT, {
-            game: this.gameSlug,
-            id: Number(this.$route.query.playerId)
-        });
+        // this.socket = io.connect(
+        //     `${process.env.serverUrl}/${events.namespaceName}`
+        // );
+        // this.gameSlug = this.$route.query.id as string;
+        // this.setupHandlers();
+        // this.socket.emit(events.output.PLAYER_CONNECT, {
+        //     game: this.gameSlug,
+        //     id: Number(this.$route.query.playerId)
+        // });
     }
 
     formatCoins (coins: number, nominative: boolean = false) {
@@ -1819,10 +1830,48 @@ export default class GamePage extends Vue {
 </script>
 
 <style lang="scss">
+$indicator-width: 10px;
+
+.sidebar-container {
+    width: 230px;
+}
+.sidebar-indicator {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    height: 100%;
+    width: $indicator-width;
+
+    &.indicator-gray {
+        background-color: gray;
+    }
+    &.indicator-blue {
+        background-color: dodgerblue;
+    }
+}
+.sidebar {
+    background-color: #d1f0ff;
+    position: fixed;
+    top: 0;
+    left: $indicator-width;
+    bottom: 0;
+    height: 100%;
+    width: 230px; // about col-4 on notebook (looks decently narrow)
+    padding: 15px;
+
+    .action-button {
+        width: 130px;
+        margin-bottom: 10px;
+    }
+}
+.logo {
+    margin-left: 25%;
+}
 .game {
     /*text-align: left;*/
 }
 .game-container {
+    margin-left: calc(#{$indicator-width} + 30px);
     margin-bottom: 50px;
 }
 .action-button {
