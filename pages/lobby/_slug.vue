@@ -58,8 +58,11 @@ import { events as eventConstants } from '~/utils/constants';
 import {
     PlayerChangedReady,
     PlayerEnteredLobby,
+    PlayerEnterLobbyFail,
+    PlayerEnterLobbySuccess,
     PlayerLeftLobby
 } from '~/utils/interfaces/events/lobby/input.interface';
+import { ValidateFailReason } from '~/utils/enums';
 
 const io = require('socket.io-client');
 
@@ -119,7 +122,15 @@ export default class LobbyPage extends Vue {
             });
 
             if (!validGame.success) {
-                this.$message.error((validGame.full) ? 'Hra je již plná.' : 'Nesprávný kód hry.');
+                let error = '';
+                if (validGame.reason === ValidateFailReason.GAME_NOT_FOUND) {
+                    error = 'Nesprávný kód hry.';
+                } else if (validGame.reason === ValidateFailReason.GAME_FULL) {
+                    error = 'Hra je již plná.';
+                } else {
+                    error = 'Hra už je spuštěná.';
+                }
+                this.$message.error(error);
             } else {
                 this.showDialog(this.joinNameDialog);
             }
@@ -163,14 +174,20 @@ export default class LobbyPage extends Vue {
         this.socket.emit(events.output.PLAYER_ENTER, {
             playerName: this.joinNameDialog.result,
             game: this.gameSlug
-        }, (result: PlayerEnteredLobby) => {
-            if (!result) {
+        }, (result: PlayerEnterLobbySuccess|PlayerEnterLobbyFail) => {
+            if (!result.success) {
                 // game is already full
-                this.$message.error('Hra už je plná.');
+                const tr = result as PlayerEnterLobbyFail;
+                if (tr.reason === ValidateFailReason.GAME_FULL) {
+                    this.$message.error('Hra už je plná.');
+                } else if (tr.reason === ValidateFailReason.GAME_RUNNING) {
+                    this.$message.error('Hra už je spuštěná.');
+                }
                 this.gameSlug = '';
                 return;
             }
-            this.selfId = result.id;
+            const tr = result as PlayerEnterLobbySuccess;
+            this.selfId = tr.id;
             this.socket.emit(events.output.GET_PLAYERS, {
                 game: this.gameSlug
             }, (players: PlayerPair[]) => {
@@ -286,7 +303,7 @@ export default class LobbyPage extends Vue {
 }
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .game-container {
     margin-top: 10px;
     margin-bottom: 50px;

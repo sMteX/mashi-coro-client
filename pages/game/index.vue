@@ -1829,7 +1829,7 @@ export default class GamePage extends Vue {
 }
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 
 .sidebar-container {
     width: 230px;
