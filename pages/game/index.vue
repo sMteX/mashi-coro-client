@@ -26,7 +26,8 @@
             @cancel="officeBuildingModalCancel"
             width="500px")
             p Vyberte svoji kartu a pak hráče a jeho kartu, které si navzájem vyměníte. Pokud kartu hrát nechcete, zrušte dialog:
-            a-select(size="large" placeholder="Vyberte svoji kartu" @change="onOfficeBuildingSelectChange" style="width: 300px; margin-bottom: 20px")
+            a-select(v-model="officeBuildingTarget.swapCardOwn" size="large" placeholder="Vyberte svoji kartu" style="width: 300px; margin-bottom: 20px")
+                a-select-option(:value="-1" disabled hidden) Vyberte svoji kartu
                 a-select-option(v-for="(cardCount, index) in officeBuildingPlayerCards" :key="index" :value="cardCount.card.cardName")
                     | {{ cardCount.card.name }} ({{ cardCount.count }})
             // - TODO: popover? for both?
@@ -44,7 +45,8 @@
             @ok="waterTreatmentPlantModalOk"
             width="500px")
             p Určete název objektu, který všichni hráči (i vy) postaví mimo provoz. Vy si vezmete 1 minci z banku za každý takto vyřazený objekt. Číslo v závorce udává, kolik takových objektů je právě ve hře u všech hráčů.
-            a-select(size="large" placeholder="Vyberte název objektu" @change="onWaterTreatmentPlantSelectChange" style="width: 300px")
+            a-select(v-model="waterTreatmentPlantCard" size="large" style="width: 300px")
+                a-select-option(:value="-1" disabled hidden) Vyberte název objektu
                 a-select-option(v-for="(cardCount, index) in waterTreatmentPlantItems" :key="index" :value="cardCount.card")
                     | {{ cardCount.name }} ({{ cardCount.count }})
         a-modal(v-if="loaded"
@@ -60,10 +62,12 @@
             width="550px")
             p Pro každou svoji kartu Přepravní firma určete protihráče, a jakou svoji kartu mu odevzdáte (můžete odevzdat i samotnou Přepravní firmu). Za každou takto odevzdanou kartu získáte 4 mince z banku.
             div.ant-row(v-for="selectIndex in logisticsCompanyCount" :key="selectIndex" style="margin-bottom: 10px")
-                a-select(size="large" placeholder="Vyberte protihráče" @change="onLogisticsCompanyPlayerSelect(selectIndex, $event)" style="width: 200px; margin-right: 10px")
+                a-select(v-model="logisticsCompanyTargets[selectIndex - 1].player" size="large" style="width: 200px; margin-right: 10px")
+                    a-select-option(:value="-1" disabled hidden) Vyberte protihráče
                     a-select-option(v-for="(player, index) in logisticCompanyPlayers" :key="index" :value="player.id")
                         | {{ player.name }}
-                a-select(size="large" placeholder="Vyberte svoji kartu" @change="onLogisticsCompanyCardSelect(selectIndex, $event)" style="width: 250px")
+                a-select(v-model="logisticsCompanyTargets[selectIndex - 1].card" size="large" style="width: 250px")
+                    a-select-option(:value="-1" disabled hidden) Vyberte svoji kartu
                     a-select-option(v-for="(cardCount, index) in logisticCompanyCards" :key="index" :value="cardCount.id")
                         | {{ cardCount.name }} ({{ cardCount.count }})
 
@@ -240,7 +244,16 @@ export default class GamePage extends Vue {
     private waterTreatmentPlantModalVisible = false;
     private waterTreatmentPlantCard = -1;
     private logisticsCompanyModalVisible = false;
-    private logisticsCompanyTargets: { player: number; card: number; }[] = [];
+    // in order for the selects to v-model to it, the array must exist and be filled
+    // one can't have more than 6 cards, so pre-populate with 6 "empty" objects - those are reset after sending the event
+    private logisticsCompanyTargets = [
+        { player: -1, card: -1 },
+        { player: -1, card: -1 },
+        { player: -1, card: -1 },
+        { player: -1, card: -1 },
+        { player: -1, card: -1 },
+        { player: -1, card: -1 }
+    ];
 
     private cardDb!: {
         [name in CardName]: Omit<CardInterface, 'bought'>;
@@ -1331,10 +1344,6 @@ export default class GamePage extends Vue {
         }));
     }
 
-    onOfficeBuildingSelectChange (value: number) {
-        this.officeBuildingTarget.swapCardOwn = value as CardName;
-    }
-
     onOfficeBuildingCascaderChange (value: number[]) {
         if (value.length !== 2) {
             return;
@@ -1363,6 +1372,11 @@ export default class GamePage extends Vue {
 
     officeBuildingModalCancel () {
         this.officeBuildingModalVisible = false;
+        this.officeBuildingTarget = {
+            targetPlayerId: -1,
+            swapCardOwn: -1,
+            swapCardTarget: -1
+        };
         this.sendActivePurpleCardsResult();
     }
 
@@ -1400,28 +1414,29 @@ export default class GamePage extends Vue {
         this.sendActivePurpleCardsResult();
     }
 
-    onWaterTreatmentPlantSelectChange (value: number) {
-        this.waterTreatmentPlantCard = value as CardName;
-    }
-
     get logisticsCompanyCount () {
         return this.thisPlayer.cards.find(cc => cc.card.cardName === CardName.LogisticsCompany)?.count || 0;
     }
 
     logisticsCompanyModalOk () {
-        // basically none of the values can be -1 (default), and the player must have enough of those cards selected
+        const count = this.logisticsCompanyCount;
+        // in the first {count} entries of logisticsCompanyTargets, there can't be any -1 (the other are pre-populated and are supposed to be empty - it's for v-model binding)
+        // and the player must have enough of those cards selected
         const cardCounts: {[card: number]: number} = {};
         let valid = true;
-        this.logisticsCompanyTargets.forEach(({ player, card }) => {
+        // first, check for -1, save which cards are we giving away
+        for (let i = 0; i < count; i += 1) {
+            const { player, card } = this.logisticsCompanyTargets[i];
             if (player === -1 || card === -1) {
                 valid = false;
-                return false;
+                break;
             }
             cardCounts[card] = (cardCounts[card] || 0) + 1;
-        });
+        }
         if (!valid) {
             return;
         }
+        // make sure we have enough of selected cards (the card selects are independent)
         Object.entries(cardCounts).forEach(([cardIndex, count]) => {
             const realCount = this.thisPlayer.cards.find(({ card }) => card.cardName === Number(cardIndex))!.count;
             if (count > realCount) {
@@ -1434,26 +1449,21 @@ export default class GamePage extends Vue {
         }
         this.logisticsCompanyModalVisible = false;
 
+        // filter only first {count} targets from the array
         this.socket.emit(events.output.LOGISTIC_COMPANY_INPUT, {
             game: this.gameSlug,
             playerId: this.thisPlayer.id,
-            args: this.logisticsCompanyTargets
+            args: this.logisticsCompanyTargets.slice(0, count)
         });
 
-        this.logisticsCompanyTargets = [];
-    }
-
-    onLogisticsCompanyPlayerSelect (index: number, value: number) {
-        // the array is filled with empty objects when opening the modal
-        this.logisticsCompanyTargets[index - 1].player = value;
+        // reset all values (technically first {count} but who cares)
+        for (let i = 0; i < 6; i += 1) {
+            this.logisticsCompanyTargets[i] = { player: -1, card: -1 };
+        }
     }
 
     get logisticCompanyPlayers () {
         return this.otherPlayers.map(({ id, name }) => ({ id, name }));
-    }
-
-    onLogisticsCompanyCardSelect (index: number, value: number) {
-        this.logisticsCompanyTargets[index - 1].card = value;
     }
 
     get logisticCompanyCards () {
@@ -1641,11 +1651,6 @@ export default class GamePage extends Vue {
                 */
             })
             .on(events.input.LOGISTICS_COMPANY_WAIT, () => {
-                this.logisticsCompanyTargets = [];
-                const count = this.thisPlayer.cards.find(({ card }) => card.cardName === CardName.LogisticsCompany)!.count;
-                for (let i = 0; i < count; i += 1) {
-                    this.logisticsCompanyTargets.push({ player: -1, card: -1 });
-                }
                 this.logisticsCompanyModalVisible = true;
             })
             .on(events.input.LOGISTICS_COMPANY_RESULT, (data: LogisticsCompanyResult) => {
@@ -1806,7 +1811,7 @@ export default class GamePage extends Vue {
             cardObj.count += 1;
             cost = cardObj.card.cost;
         } else {
-            const cardObj = this.table.buyableCards.map(cc => cc.card).find(c => c.cardName === card)!;
+            const cardObj = this.cardDb[card];
             // we already made the assumption that we can't move/exchange deactivated cards
             player.cards.push({ card: { ...cardObj, bought: true }, count: 1, active: true });
             cost = cardObj.cost;
