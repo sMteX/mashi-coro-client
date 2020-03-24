@@ -1612,6 +1612,10 @@ export default class GamePage extends Vue {
                 if (strings.length > 0) {
                     this.log('Červené karty: ' + strings.join(' '), true);
                 }
+                // check for triggered deactivated red cards, activate them
+                this.currentPlayer.cards
+                    .filter(cc => cc.card.color === CardColor.Red && !cc.active && cc.card.triggerNumbers.includes(this.dice.sum))
+                    .forEach(({ card }) => this.toggleCardActive(this.currentPlayer, card.cardName));
                 this.currentTurnPhase = TurnPhase.BlueGreenCards;
             })
             .on(events.input.BLUE_CARD_EFFECTS, (data: BlueCardEffects) => {
@@ -1626,6 +1630,10 @@ export default class GamePage extends Vue {
                 if (strings.length > 0) {
                     this.log('Modré karty: ' + strings.join(' '), true);
                 }
+                // check for triggered deactivated red cards, activate them
+                this.currentPlayer.cards
+                    .filter(cc => cc.card.color === CardColor.Blue && !cc.active && cc.card.triggerNumbers.includes(this.dice.sum))
+                    .forEach(({ card }) => this.toggleCardActive(this.currentPlayer, card.cardName));
             })
             .on(events.input.GREEN_CARD_EFFECTS, (data: GreenCardEffects) => {
                 // TODO: Logistics Company
@@ -1640,7 +1648,10 @@ export default class GamePage extends Vue {
                 if (!this.playerHasCard(this.thisPlayer, CardName.LogisticsCompany)) {
                     this.currentTurnPhase = TurnPhase.PurpleCards;
                 }
-
+                // check for triggered deactivated green cards, activate them
+                this.currentPlayer.cards
+                    .filter(cc => cc.card.color === CardColor.Green && !cc.active && cc.card.cardName !== CardName.Winery && cc.card.triggerNumbers.includes(this.dice.sum))
+                    .forEach(({ card }) => this.toggleCardActive(this.currentPlayer, card.cardName));
                 /* server side: after green cards are done, check if player has some purple cards that NEED user input (and are actually triggered)
                         exactly 50:50, 4 cards active, 4 cards passive
                         active: Office Building, Water Treatment Plant, TV Studio, IT Center
@@ -1724,6 +1735,7 @@ export default class GamePage extends Vue {
                 if (this.isPlayerOnTurn) {
                     this.log('Nyní můžete stavět.', true);
                 }
+
                 this.currentTurnPhase = TurnPhase.Build;
             })
             .on(events.input.PLAYER_BOUGHT_CARD, (data: PlayerBoughtCard) => {
