@@ -501,8 +501,12 @@ export default class GamePage extends Vue {
     }
 
     get isKeepDiceActive (): boolean {
-        return this.isPlayerOnTurn && this.currentTurnPhase === TurnPhase.PostRoll && !this.alreadyUsedTransmitter;
-        // return true;
+        if (this.playerHasCard(this.thisPlayer, CardName.Transmitter)) {
+            return this.isPlayerOnTurn && this.currentTurnPhase === TurnPhase.PostRoll;
+        } else {
+            // if it's because of Port, then it makes sense only if he's rolled 10 or more (no reason to keep dice if I rolled 8)
+            return this.isPlayerOnTurn && this.currentTurnPhase === TurnPhase.PostRoll && this.dice.sum >= 10;
+        }
     }
 
     get isRollAgainActive (): boolean {
