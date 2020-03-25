@@ -375,6 +375,15 @@ export default class GamePage extends Vue {
         }
     }
 
+    isCardActive (player: Player, card: CardName) {
+        const cc = player.cards.find(c => c.card.cardName === card);
+        if (cc) {
+            return cc.active;
+        } else {
+            return false;
+        }
+    }
+
     isCardClickable ({ card }: CardCount): boolean {
         let purpleDominantCheck = true;
         if (card.color === CardColor.Purple || card.color === CardColor.Dominant) {
@@ -1631,7 +1640,8 @@ export default class GamePage extends Vue {
                 if (data.wineryToggled) {
                     this.toggleCardActive(p, CardName.Winery);
                 }
-                if (!this.playerHasCard(this.thisPlayer, CardName.LogisticsCompany)) {
+                const logCompanyWillBeTriggered = this.playerHasCard(p, CardName.LogisticsCompany) && (this.dice.sum === 9 || this.dice.sum === 10) && this.isCardActive(p, CardName.LogisticsCompany);
+                if (!logCompanyWillBeTriggered) {
                     this.currentTurnPhase = TurnPhase.PurpleCards;
                 }
                 // check for triggered deactivated green cards, activate them
