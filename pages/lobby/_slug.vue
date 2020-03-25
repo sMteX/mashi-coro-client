@@ -112,7 +112,8 @@ export default class LobbyPage extends Vue {
 
     async mounted () {
         this.socket = io.connect(
-            `${process.env.serverUrl}/${events.namespaceName}`
+            `${process.env.serverUrl}/${events.namespaceName}`,
+            { transports: ['websocket'] }
         );
         this.setupHandlers();
 

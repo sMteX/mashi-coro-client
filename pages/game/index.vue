@@ -316,7 +316,8 @@ export default class GamePage extends Vue {
         // this.useDummyData();
         // TODO: redirect if player didn't come from lobby (or maybe just don't use pages for this, but instead giant components that just get switched?)
         this.socket = io.connect(
-            `${process.env.serverUrl}/${events.namespaceName}`
+            `${process.env.serverUrl}/${events.namespaceName}`,
+            { transports: ['websocket'] }
         );
         this.gameSlug = this.$route.query.id as string;
         this.setupHandlers();
