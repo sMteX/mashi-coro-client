@@ -31,7 +31,7 @@
                 a-select-option(v-for="(cardCount, index) in officeBuildingPlayerCards" :key="index" :value="cardCount.card.cardName")
                     | {{ cardCount.card.name }} ({{ cardCount.count }})
             // - TODO: popover? for both?
-            a-cascader(size="large" placeholder="Vyberte hráče a jeho kartu" :options="officeBuildingItems" @change="onOfficeBuildingCascaderChange" style="width: 300px")
+            a-cascader(v-model="officeBuildingCascader" size="large" placeholder="Vyberte hráče a jeho kartu" :options="officeBuildingItems" style="width: 300px")
                 // - template(slot="displayRender" slot-scope="{labels, selectedOptions}")
         a-modal(v-if="loaded"
             title="Čistička"
@@ -235,6 +235,7 @@ export default class GamePage extends Vue {
     private tvStudioModalVisible = false;
     private tvStudioTarget = -1;
     private officeBuildingModalVisible = false;
+    private officeBuildingCascader = [];
     private officeBuildingTarget = {
         targetPlayerId: -1,
         swapCardOwn: -1,
@@ -1305,6 +1306,7 @@ export default class GamePage extends Vue {
         // reset all related values!
         this.activePurpleResults = {};
         this.tvStudioTarget = -1;
+        this.officeBuildingCascader = [];
         this.officeBuildingTarget = {
             targetPlayerId: -1,
             swapCardOwn: -1,
@@ -1345,51 +1347,30 @@ export default class GamePage extends Vue {
         }));
     }
 
-    onOfficeBuildingCascaderChange (value: number[]) {
-        if (value.length !== 2) {
+    officeBuildingModalOk () {
+        if (this.officeBuildingCascader.length !== 2 || this.officeBuildingTarget.swapCardOwn === -1) {
             return;
         }
-        const [playerId, cardId] = value;
+        const [playerId, cardId] = this.officeBuildingCascader;
         this.officeBuildingTarget.targetPlayerId = playerId;
         this.officeBuildingTarget.swapCardTarget = cardId as CardName;
-    }
-
-    officeBuildingModalOk () {
-        const valid = this.officeBuildingTarget.targetPlayerId !== -1 && this.officeBuildingTarget.swapCardTarget !== -1 && this.officeBuildingTarget.swapCardOwn !== -1;
-        if (!valid) {
-            return;
-        }
         this.officeBuildingModalVisible = false;
 
         this.activePurpleResults[CardName.OfficeBuilding] = {
             // currentPlayerId is sent in the event itself
-            targetPlayerId: this.officeBuildingTarget.targetPlayerId,
-            swapCardOwn: this.officeBuildingTarget.swapCardOwn,
-            swapCardTarget: this.officeBuildingTarget.swapCardTarget
-            // or ...this.officeBuildingTarget ?
+            ...this.officeBuildingTarget
         };
         this.sendActivePurpleCardsResult();
     }
 
     officeBuildingModalCancel () {
         this.officeBuildingModalVisible = false;
-        this.officeBuildingTarget = {
-            targetPlayerId: -1,
-            swapCardOwn: -1,
-            swapCardTarget: -1
-        };
         this.sendActivePurpleCardsResult();
     }
 
     get waterTreatmentPlantItems () {
         // cards and how many are there active? (how many coins we can get from them)
         const counts: {[card in CardName]?: number} = {};
-        // Object.values(this.cardDb).forEach((card) => {
-        //     if (card.color !== CardColor.Dominant && card.color !== CardColor.Purple) {
-        //         // technically we can pick any object, not only those that someone has (it makes no sense but that's not our problem)
-        //         counts[card.cardName] = 0;
-        //     }
-        // });
         this.players.flatMap(player => player.cards).forEach(({ card, count, active }) => {
             if (card.color !== CardColor.Purple && active) {
                 counts[card.cardName] = (counts[card.cardName] || 0) + count;
