@@ -95,6 +95,7 @@
                             li Vy: {{ thisPlayer.money }}
                             li(v-for="(player, i) in otherPlayers" :key="i") {{ player.name }}: {{ player.money }}
         div.game-container.ant-col-18(:class="{ 'ant-col-offset-4': !loaded }")
+            div.confetti(v-show="showConfetti")
             div.ant-row
                 MachiKoroLogo.logo
             div.ant-row
@@ -296,6 +297,8 @@ export default class GamePage extends Vue {
     private alreadyUsedTransmitter: boolean = false;
     private alreadyUsedPort: boolean = false;
     private alreadyBought: boolean = false;
+
+    private showConfetti: boolean = false;
 
     private dice = {
         first: -1,
@@ -1788,9 +1791,27 @@ export default class GamePage extends Vue {
             })
             .on(events.input.PLAYER_WON_GAME, ({ playerId }: PlayerWonGame) => {
                 this.socket.disconnect();
-                alert(`${this.playerName(playerId)} vyhrál/a hru!`);
-                // TODO: "play again" kinda lobby
-                this.$router.push({ path: '/lobby' });
+                const youWon = playerId === this.thisPlayer.id;
+                let winText = '';
+                if (youWon) {
+                    this.showConfetti = true;
+                    winText = 'Vyhrál/a jsi hru! Gratuluji!';
+                } else {
+                    winText = `${this.playerName(playerId)} vyhrál/a hru.`;
+                }
+                this.$confirm({
+                    title: 'Konec hry',
+                    content: winText,
+                    onOk: () => {
+                        if (youWon) {
+                            this.showConfetti = false;
+                        }
+                        // TODO: "play again" kinda lobby
+                        this.$router.push({ path: '/lobby' });
+                    },
+                    class: 'confettiConfirm',
+                    mask: false
+                });
             })
             .on(events.input.GAME_ENDED_EMPTY, () => {
                 this.socket.disconnect();
@@ -1843,7 +1864,17 @@ export default class GamePage extends Vue {
 </script>
 
 <style lang="scss" scoped>
-
+.confetti {
+    position: absolute;
+    width: 100vw;
+    height: 100%; // it's positioned in the tallest container
+    left: -270px; // and just shifted to the left by 270 (230px sidebar + 40px margin)
+    z-index: 200;
+    background-image: url("../../assets/img/confetti.gif");
+    background-size: auto;
+    background-repeat: repeat;
+    pointer-events: none;
+}
 .sidebar-container {
     width: 230px;
 }
