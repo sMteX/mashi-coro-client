@@ -1,6 +1,7 @@
 <template lang="pug">
     div
         // - dialogs - really need to figure out a better way to do it
+        div.confetti(v-show="showConfetti")
         a-modal(v-if="loaded"
             title="Televizní studio"
             :visible="tvStudioModalVisible"
@@ -95,7 +96,6 @@
                             li Vy: {{ thisPlayer.money }}
                             li(v-for="(player, i) in otherPlayers" :key="i") {{ player.name }}: {{ player.money }}
         div.game-container.ant-col-18(:class="{ 'ant-col-offset-4': !loaded }")
-            div.confetti(v-show="showConfetti")
             div.ant-row
                 MachiKoroLogo.logo
             div.ant-row
@@ -1865,10 +1865,11 @@ export default class GamePage extends Vue {
 
 <style lang="scss" scoped>
 .confetti {
-    position: absolute;
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100vw;
-    height: 100%; // it's positioned in the tallest container
-    left: -270px; // and just shifted to the left by 270 (230px sidebar + 40px margin)
+    height: 100vh;
     z-index: 200;
     background-image: url("../../assets/img/confetti.gif");
     background-size: auto;
