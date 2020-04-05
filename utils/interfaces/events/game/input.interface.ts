@@ -32,10 +32,6 @@ export interface DiceRollOutput {
     sum: number;
     transmitter: boolean;
 }
-export interface AddedTwo {
-    sum: number;
-    player: number;
-}
 export interface RedCardEffects {
     fromPlayer: number;
     result: {

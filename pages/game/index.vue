@@ -95,6 +95,10 @@
                         ul
                             li Vy: {{ thisPlayer.money }}
                             li(v-for="(player, i) in otherPlayers" :key="i") {{ player.name }}: {{ player.money }}
+                    div.ant-row
+                        h3 Zprávy
+                        div.messages
+                            SidebarMessage(v-for="(message, i) in lastSidebarMessages" :key="i" :message="message")
         div.game-container.ant-col-18(:class="{ 'ant-col-offset-4': !loaded }")
             div.ant-row
                 MachiKoroLogo.logo
@@ -141,7 +145,6 @@ import MachiKoroLogo from '~/components/MachiKoroLogo.vue';
 import { events as eventConstants } from '~/utils/constants';
 import {
     ActivePurpleCardEffects,
-    AddedTwo,
     AirportGain,
     AmusementParkNewTurn,
     BlueCardEffects,
@@ -167,6 +170,8 @@ import Card from '~/components/Card.vue';
 import { Card as CardInterface, CardColor, CardLocation, CardName } from '~/utils/cards';
 import Dice from '~/components/Dice.vue';
 import TableCards from '~/components/TableCards.vue';
+import { MessageType } from '~/utils/enums';
+import SidebarMessage from '~/components/SidebarMessage.vue';
 
 const io = require('socket.io-client');
 const { game: events } = eventConstants;
@@ -215,10 +220,18 @@ interface ActionButton {
     isActive: () => boolean;
 }
 
+interface Message {
+    type: MessageType;
+    args: {
+        [prop: string]: any
+    };
+}
+
 const dominants = [CardName.TownHall, CardName.Port, CardName.Station, CardName.ShoppingCenter, CardName.AmusementPark, CardName.Transmitter, CardName.Airport];
 
 @Component({
     components: {
+        SidebarMessage,
         MachiKoroLogo,
         Logo,
         Card,
@@ -286,6 +299,7 @@ export default class GamePage extends Vue {
     private dummySetup: boolean = false;
     private players: Player[] = [];
     private messages: string[] = [];
+    private sidebarMessages: Message[] = [];
     private loaded: boolean = false;
     private started: boolean = false;
     private gameSlug: string = '';
@@ -402,7 +416,7 @@ export default class GamePage extends Vue {
     // <editor-fold desc="Action buttons">
     // <editor-fold desc="button handlers">
     rollOneDice () {
-        this.log('Hozeno jednou kostkou.');
+        this.log(false, 'Hozeno jednou kostkou.');
         if (!this.dummySetup) {
             this.chosenAmountOfDice = 1;
             this.socket.emit(events.output.DICE_ROLL, {
@@ -415,7 +429,7 @@ export default class GamePage extends Vue {
     }
 
     rollTwoDice () {
-        this.log('Hozeno dvěma kostkami.');
+        this.log(false, 'Hozeno dvěma kostkami.');
         if (!this.dummySetup) {
             this.chosenAmountOfDice = 2;
             this.socket.emit(events.output.DICE_ROLL, {
@@ -428,7 +442,7 @@ export default class GamePage extends Vue {
     }
 
     keepDice () {
-        this.log('Kostky ponechány.');
+        this.log(false, 'Kostky ponechány.');
         if (!this.dummySetup) {
             this.alreadyUsedPort = true;
             this.alreadyUsedTransmitter = true; // technically "used", we used the CHOICE to not roll again
@@ -440,7 +454,7 @@ export default class GamePage extends Vue {
     }
 
     rollAgain () {
-        this.log('Hozeno znovu.');
+        this.log(false, 'Hozeno znovu.');
         if (!this.dummySetup) {
             this.alreadyUsedTransmitter = true;
             this.socket.emit(events.output.DICE_ROLL, {
@@ -453,7 +467,7 @@ export default class GamePage extends Vue {
     }
 
     addTwoToRoll () {
-        this.log('Přidáno 2 k hodu.');
+        this.log(false, 'Přidáno 2 k hodu.');
         if (!this.dummySetup) {
             this.alreadyUsedPort = true;
             this.socket.emit(events.output.ADD_TWO, {
@@ -464,7 +478,7 @@ export default class GamePage extends Vue {
     }
 
     endTurn () {
-        this.log('Tah ukončen.');
+        this.log(false, 'Tah ukončen.');
         if (!this.dummySetup) {
             this.emitEndTurn();
         }
@@ -600,17 +614,29 @@ export default class GamePage extends Vue {
         return cards;
     }
 
+    get lastSidebarMessages (): Message[] {
+        return this.sidebarMessages.slice(-6);
+    }
+
     get lastMessages (): string[] {
         return this.messages.slice(-5);
     }
 
-    log (message: string, display: boolean = false) {
-        this.messages.push(message);
-        if (display) {
-            this.$message.info(message, 5);
-        }
-        if (process.env.NODE_ENV === 'development') {
-            console.log(message);
+    log (sidebar: MessageType|false, args?: any, display: boolean = false) {
+        if (typeof sidebar === 'boolean') {
+            // assume args is a string (like the old log())
+            if (typeof args !== 'string') {
+                console.warn(`Incorrect args logged. Should be string, received: ${args}`);
+            }
+            this.messages.push(args);
+            if (display) {
+                this.$message.info(args, 5);
+            }
+            if (process.env.NODE_ENV === 'development') {
+                console.log(args);
+            }
+        } else {
+            this.sidebarMessages.push({ type: sidebar, args });
         }
     }
 
@@ -1257,6 +1283,29 @@ export default class GamePage extends Vue {
             itCenterCoins: 0
         })));
         this.setupActionButtons();
+        // as a test, pre-fill sidebar messages with one of every type (so we can style them properly)
+        const p1 = 'Chizu';
+        const p2 = 'Gieen';
+        this.sidebarMessages.push(
+            { type: MessageType.FinalDiceRoll, args: { player: p1, dice: [6, 5], sum: 11 } },
+            { type: MessageType.FinalDiceRoll, args: { player: p1, dice: [6, 5], sum: 13 } },
+            { type: MessageType.RedCard, args: { fromPlayer: p2, player: p1, gains: 3, newMoney: 5 } },
+            { type: MessageType.BlueCard, args: { player: p1, gains: 1, newMoney: 2 } },
+            { type: MessageType.GreenCard, args: { player: p1, gains: 4, newMoney: 5 } },
+            // { type: MessageType.LogisticsCompany, args: { player: p1, gains: 8, pairs: [{ card: 'Pšeničné pole', target: p2 }, { card: 'Hokynářství', target: p2 }] } },
+
+            // { type: MessageType.GenericPurpleCard, args: { player: p1, gains: 5, newMoney: 10 } },
+            // { type: MessageType.Park, args: {} },
+            // { type: MessageType.OfficeBuilding, args: { source: p1, sourceCard: 'Hokynářství', target: p2, targetCard: 'Luxusní restaurace' } },
+            // { type: MessageType.TelevisionStudio, args: { source: p1, target: p2, gains: 5, newMoney: 6 } },
+            // { type: MessageType.WaterTreatment, args: { player: p1, card: 'Luxusní restaurace', gain: 12 } },
+            // { type: MessageType.TownHall, args: { player: p1 } },
+
+            // { type: MessageType.BoughtCard, args: { player: p1, card: 'Velkoobchod s potravinami' } },
+            // { type: MessageType.ItCenter, args: { player: p1 } },
+            // { type: MessageType.Airport, args: { player: p1 } },
+            // { type: MessageType.AmusementPark, args: { player: p1 } }
+        );
         this.loaded = true;
         this.started = true;
     }
@@ -1510,7 +1559,6 @@ export default class GamePage extends Vue {
     setupHandlers () {
         this.socket
             .on(events.input.GAME_DATA_LOAD, (data: GameDataLoad) => {
-                console.log('Game starting soon, received data:', data);
                 this.cardDb = Object.assign({}, data.cardDb);
                 this.table.bank = data.bank;
                 this.table.buyableCards = data.buyableCards.map(pair => ({
@@ -1551,7 +1599,7 @@ export default class GamePage extends Vue {
                 this.loaded = true;
             })
             .on(events.input.GAME_STARTING, () => {
-                this.log('Hra začíná.', true);
+                this.log(false, 'Hra začíná.', true);
                 this.started = true;
             })
             .on(events.input.DICE_ROLL_OUTPUT, (data: DiceRollOutput) => {
@@ -1566,7 +1614,7 @@ export default class GamePage extends Vue {
                 setTimeout(() => {
                     // roll animation should take around 1 second, show things AFTER the animation ends
                     this.currentTurnPhase = TurnPhase.PostRoll;
-                    this.log(`${this.playerName(data.player)} hodil/a ${data.transmitter ? 'znovu ' : ''}tyto kostky: ${data.dice.join(', ')}`);
+                    this.log(false, `${this.playerName(data.player)} hodil/a ${data.transmitter ? 'znovu ' : ''}tyto kostky: ${data.dice.join(', ')}`);
 
                     const hasTransmitter = this.playerHasCard(this.thisPlayer, CardName.Transmitter);
                     const hasPort = this.playerHasCard(this.thisPlayer, CardName.Port);
@@ -1583,14 +1631,14 @@ export default class GamePage extends Vue {
                     }
                 }, 1100);
             })
-            .on(events.input.ADDED_TWO, (data: AddedTwo) => {
-                this.log(`${this.playerName(data.player)} přidal/a ke svému hodu 2, nyní je jeho/její hod ${data.sum}.`, true);
-            })
             .on(events.input.FINAL_DICE_ROLL, (data: DiceRollOutput) => {
-                if (this.playerHasCard(this.findPlayer(data.player), CardName.Transmitter)) {
-                    // only if player has Transmitter and actually CAN change their mind, show this message
-                    this.log(`Konečný hod ${this.playerName(data.player)} je ${data.dice.join(', ')} (${data.sum}).`, true);
-                }
+                // now already shows the latest roll, including Transmitter and/or Port etc.
+                this.log(MessageType.FinalDiceRoll, {
+                    player: this.playerName(data.player),
+                    dice: data.dice,
+                    sum: data.sum
+                });
+
                 const [first, second] = data.dice;
                 this.dice.first = first;
                 this.dice.second = second;
@@ -1598,18 +1646,19 @@ export default class GamePage extends Vue {
                 this.currentTurnPhase = TurnPhase.RedCards;
             })
             .on(events.input.RED_CARD_EFFECTS, (data: RedCardEffects) => {
-                const strings: string[] = [];
                 Object.entries(data.result).forEach(([id, result]) => {
                     if (result.gains !== undefined && result.gains > 0) {
                         // someone stole something from player, show
-                        strings.push(`${this.playerName(id)} získává ${this.formatCoins(result.gains)} od ${this.playerName(data.fromPlayer)} a má nyní ${this.formatCoins(result.newMoney)}.`);
+                        this.log(MessageType.RedCard, {
+                            fromPlayer: this.playerName(data.fromPlayer),
+                            player: this.playerName(id),
+                            gains: result.gains,
+                            newMoney: result.newMoney
+                        });
                     }
                     const p = this.findPlayer(Number(id));
                     p.money = result.newMoney;
                 });
-                if (strings.length > 0) {
-                    this.log('Červené karty: ' + strings.join(' '), true);
-                }
                 // check for triggered deactivated red cards, activate them
                 this.currentPlayer.cards
                     .filter(cc => cc.card.color === CardColor.Red && !cc.active && cc.card.triggerNumbers.includes(this.dice.sum))
@@ -1617,26 +1666,29 @@ export default class GamePage extends Vue {
                 this.currentTurnPhase = TurnPhase.BlueGreenCards;
             })
             .on(events.input.BLUE_CARD_EFFECTS, (data: BlueCardEffects) => {
-                const strings: string[] = [];
                 Object.entries(data.result).forEach(([id, result]) => {
                     if (result.gains > 0) {
-                        strings.push(`${this.playerName(id)} získává ${this.formatCoins(result.gains)} a má nyní ${this.formatCoins(result.newMoney)}.`);
+                        this.log(MessageType.BlueCard, {
+                            player: this.playerName(id),
+                            gains: result.gains,
+                            newMoney: result.newMoney
+                        });
                     }
                     const p = this.findPlayer(Number(id));
                     p.money = result.newMoney;
                 });
-                if (strings.length > 0) {
-                    this.log('Modré karty: ' + strings.join(' '), true);
-                }
                 // check for triggered deactivated red cards, activate them
                 this.currentPlayer.cards
                     .filter(cc => cc.card.color === CardColor.Blue && !cc.active && cc.card.triggerNumbers.includes(this.dice.sum))
                     .forEach(({ card }) => this.toggleCardActive(this.currentPlayer, card.cardName));
             })
             .on(events.input.GREEN_CARD_EFFECTS, (data: GreenCardEffects) => {
-                // TODO: Logistics Company
                 if (data.gains > 0) {
-                    this.log(`Zelené karty: ${this.playerName(data.player)} získává ${this.formatCoins(data.gains)} a má nyní ${this.formatCoins(data.newMoney)}.`, true);
+                    this.log(MessageType.GreenCard, {
+                        player: this.playerName(data.player),
+                        gains: data.gains,
+                        newMoney: data.newMoney
+                    });
                 }
                 const p = this.findPlayer(data.player);
                 p.money = data.newMoney;
@@ -1664,9 +1716,8 @@ export default class GamePage extends Vue {
                 this.logisticsCompanyModalVisible = true;
             })
             .on(events.input.LOGISTICS_COMPANY_RESULT, (data: LogisticsCompanyResult) => {
-                // TODO: remove given cards from player, give them to target player
                 const sourcePlayer = this.findPlayer(data.sourcePlayer);
-                const strings: string[] = [];
+                const args: { gains: number; pairs: any[]; player: string } = { player: sourcePlayer.name, gains: 0, pairs: [] };
                 data.playersAndCards.forEach(({ player, card }) => {
                     const targetPlayer = this.findPlayer(player);
 
@@ -1674,29 +1725,33 @@ export default class GamePage extends Vue {
                     this.addCardToPlayer(targetPlayer, card, false);
 
                     sourcePlayer.money += 4;
-                    strings.push(`${sourcePlayer.name} odevzdal/a svoji kartu ${this.cardName(card)} hráči ${targetPlayer.name} a získává ${this.formatCoins(4)}.`);
+                    args.pairs.push({ card: this.cardName(card), target: targetPlayer.name });
+                    args.gains += 4;
                 });
-                this.log(strings.join(' '), true);
+                this.log(MessageType.LogisticsCompany, args);
                 this.currentTurnPhase = TurnPhase.PurpleCards;
             })
             .on(events.input.PASSIVE_PURPLE_CARD_EFFECTS, (data: PassivePurpleCardEffects) => {
                 Object.entries(data.result).forEach(([id, result]) => {
                     if (!data.parkActivated && result.gains !== undefined && result.gains > 0) {
                         // someone stole something from player, show
-                        this.log(`Fialové karty: ${this.playerName(data.player)} získává ${this.formatCoins(result.gains)} od ostatních hráčů a má nyní ${this.formatCoins(result.newMoney)}.`, true);
+                        this.log(MessageType.GenericPurpleCard, {
+                            player: this.playerName(data.player),
+                            gains: result.gains,
+                            newMoney: result.newMoney
+                        });
                     }
                     const p = this.findPlayer(Number(id));
                     p.money = result.newMoney;
                 });
                 if (data.parkActivated) {
-                    this.log('Fialové karty: Byla aktivována karta Park - mince všech hráčů byly rozděleny rovným dílem.', true);
+                    this.log(MessageType.Park, {});
                 }
                 // still purple cards
             })
             // following event is separated because it's dealing with modals and I'd like to have the handlers somewhat "near" each other
             .on(events.input.ACTIVE_PURPLE_CARD_WAIT, this.onActivePurpleCardWait)
             .on(events.input.ACTIVE_PURPLE_CARD_RESULT, (data: ActivePurpleCardEffects) => {
-                console.log('active purple card results', data);
                 Object.entries(data.results).forEach(([cardName, result]) => {
                     const cardEnum = Number(cardName) as CardName;
                     if (cardEnum === CardName.OfficeBuilding) {
@@ -1710,35 +1765,49 @@ export default class GamePage extends Vue {
 
                         this.removeCardFromPlayer(targetPlayer, typedResult.swapCardTarget);
                         this.addCardToPlayer(sourcePlayer, typedResult.swapCardTarget, false);
-                        this.log(`Fialové karty: ${sourcePlayer.name} vyměnil/a svoji kartu ${this.cardName(typedResult.swapCardOwn)} za ${this.cardName(typedResult.swapCardTarget)} od ${targetPlayer.name}.`, true);
+                        this.log(MessageType.OfficeBuilding, {
+                            source: sourcePlayer.name,
+                            sourceCard: this.cardName(typedResult.swapCardOwn),
+                            target: targetPlayer.name,
+                            targetCard: this.cardName(typedResult.swapCardTarget)
+                        });
                     } else if (cardEnum === CardName.TelevisionStudio) {
                         const typedResult = result as TelevisionStudioEffect;
                         this.findPlayer(typedResult.currentPlayerId).money = typedResult.currentPlayerMoney;
                         this.findPlayer(typedResult.targetPlayerId).money = typedResult.targetPlayerMoney;
-                        this.log(`Fialové karty: ${this.playerName(typedResult.currentPlayerId)} získává ${this.formatCoins(typedResult.gain)} od ${this.playerName(typedResult.targetPlayerId)} a má nyní ${this.formatCoins(typedResult.currentPlayerMoney)}.`, true);
+                        this.log(MessageType.TelevisionStudio, {
+                            source: this.playerName(typedResult.currentPlayerId),
+                            target: this.playerName(typedResult.targetPlayerId),
+                            gains: typedResult.gain,
+                            newMoney: typedResult.currentPlayerMoney
+                        });
                     } else if (cardEnum === CardName.WaterTreatmentPlant) {
                         const typedResult = result as WaterTreatmentPlantEffect;
                         const currentPlayer = this.findPlayer(typedResult.currentPlayerId);
                         currentPlayer.money = typedResult.currentPlayerMoney;
                         this.players.forEach(player => this.toggleCardActive(player, typedResult.card, false));
-                        this.log(`Fialové karty: ${currentPlayer.name} postavil/a všechny karty ${this.cardName(typedResult.card)} mimo provoz a za to získává ${this.formatCoins(typedResult.gain)}.`);
+                        this.log(MessageType.WaterTreatment, {
+                            player: currentPlayer.name,
+                            card: this.cardName(typedResult.card),
+                            gain: typedResult.gain
+                        });
                     }
                 });
             })
             .on(events.input.TOWN_HALL_GAIN, (data: TownHallGain) => {
-                this.log(`${this.playerName(data.player)} získává 1 minci za Radnici.`, true);
+                this.log(MessageType.TownHall, { player: this.playerName(data.player) });
                 const player = this.findPlayer(data.player);
                 player.money += 1;
             })
             .on(events.input.BUILDING_POSSIBLE, () => {
                 if (this.isPlayerOnTurn) {
-                    this.log('Nyní můžete stavět.', true);
+                    this.log(false, 'Nyní můžete stavět.', true);
                 }
 
                 this.currentTurnPhase = TurnPhase.Build;
             })
             .on(events.input.PLAYER_BOUGHT_CARD, (data: PlayerBoughtCard) => {
-                this.log(`${this.playerName(data.player)} si koupil/a kartu ${this.cardName(data.card)}.`, true);
+                this.log(MessageType.BoughtCard, { player: this.playerName(data.player), card: this.cardName(data.card) });
 
                 const player = this.findPlayer(data.player);
                 this.addCardToPlayer(player, data.card, true);
@@ -1762,29 +1831,29 @@ export default class GamePage extends Vue {
             })
             .on(events.input.IT_CENTER_COIN, (data: ItCenterCoin) => {
                 const player = this.findPlayer(data.player);
-                this.log(`${player.name} přidal/a jednu minci na svoji kartu IT centrum.`, true);
+                this.log(MessageType.ItCenter, { player: player.name });
                 player.itCenterCoins += 1;
                 player.money -= 1;
             })
             .on(events.input.AIRPORT_GAIN, ({ player }: AirportGain) => {
-                this.log(`${this.playerName(player)} nic nepostavil/a, dostane 10 mincí za Letiště.`, true);
+                this.log(MessageType.Airport, { player: this.playerName(player) });
                 const p = this.findPlayer(player);
                 p.money += 10;
             })
             .on(events.input.AMUSEMENT_PARK_NEW_TURN, ({ player }: AmusementParkNewTurn) => {
-                this.log(`${this.playerName(player)} hodil/a 2 stejné kostky, získává nový tah díky Zábavnímu parku.`, true);
+                this.log(MessageType.AmusementPark, { player: this.playerName(player) });
                 this.resetDefaultValues();
             })
             .on(events.input.NEW_TURN, ({ oldPlayer, newPlayer }: NewTurn) => {
-                this.log(`${this.playerName(oldPlayer)} ukončil/a tah, nový hráč: ${this.playerName(newPlayer)}.`, true);
+                this.log(false, `${this.playerName(oldPlayer)} ukončil/a tah, nový hráč: ${this.playerName(newPlayer)}.`, true);
                 this.activePlayerId = newPlayer;
                 this.resetDefaultValues();
             })
             .on(events.input.PLAYER_LEFT_GAME, ({ playerId, newPlayer }: PlayerLeftGame) => {
-                this.log(`${this.playerName(playerId)} opustil/a hru.`, true);
+                this.log(false, `${this.playerName(playerId)} opustil/a hru.`, true);
                 // TODO: fix? broken?
                 if (newPlayer !== undefined) {
-                    this.log(`${this.playerName(playerId)} opustil/a hru. Jelikož byl/a právě na tahu, novým hráčem je ${this.playerName(newPlayer)}.`, true);
+                    this.log(false, `${this.playerName(playerId)} opustil/a hru. Jelikož byl/a právě na tahu, novým hráčem je ${this.playerName(newPlayer)}.`, true);
                     this.activePlayerId = newPlayer;
                 }
                 this.players = this.players.filter(p => p.id !== playerId);
@@ -1897,6 +1966,26 @@ export default class GamePage extends Vue {
     .action-button {
         width: 130px;
         margin-bottom: 10px;
+    }
+    .messages {
+        margin-left: 10px;
+        color: black;
+
+        .redCard {
+            color: #84160f;
+        }
+        .blueCard {
+            color: #4170a2;
+        }
+        .greenCard {
+            color: #407900;
+        }
+        .purpleCard {
+            color: #952981;
+        }
+        .bold {
+            font-weight: bold;
+        }
     }
 }
 .logo {

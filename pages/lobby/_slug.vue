@@ -215,7 +215,9 @@ export default class LobbyPage extends Vue {
 
     log (message: string) {
         this.messages.push(message);
-        console.log(message);
+        if (process.env.NODE_ENV === 'development') {
+            console.log(message);
+        }
     }
 
     findPlayer (id: number) {
