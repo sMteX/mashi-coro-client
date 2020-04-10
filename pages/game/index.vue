@@ -615,7 +615,7 @@ export default class GamePage extends Vue {
     }
 
     get lastSidebarMessages (): Message[] {
-        return this.sidebarMessages.slice(-6);
+        return _.reverse(this.sidebarMessages.slice(-9));
     }
 
     get lastMessages (): string[] {
