@@ -1726,8 +1726,8 @@ export default class GamePage extends Vue {
                         this.findPlayer(typedResult.currentPlayerId).money = typedResult.currentPlayerMoney;
                         this.findPlayer(typedResult.targetPlayerId).money = typedResult.targetPlayerMoney;
                         this.log(MessageType.TelevisionStudio, {
-                            source: this.playerName(typedResult.currentPlayerId),
-                            target: this.playerName(typedResult.targetPlayerId),
+                            source: this.playerName(typedResult.targetPlayerId),
+                            target: this.playerName(typedResult.currentPlayerId),
                             gains: typedResult.gain,
                             newMoney: typedResult.currentPlayerMoney
                         });
