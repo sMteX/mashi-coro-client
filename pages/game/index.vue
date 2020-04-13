@@ -81,9 +81,24 @@
                         p Fáze tahu: {{ turnPhases[currentTurnPhase] }}
                     div.ant-row
                         h3 Akce
-                        div.ant-row-flex.ant-row-flex-center
-                            button.action-button.ant-btn(v-for="(button, index) in buttons" :key="index" v-show="button.isVisible()" :disabled="!button.isActive()" @click="button.handler") {{ button.text }}
-                    div.ant-row.delimiter
+                        div.buttons
+                            div.ant-col-8(v-show="isRollOneDiceVisible")
+                                button.action-button.ant-btn(:disabled="!isRollOneDiceActive" @click="rollOneDice" title="Hod 1 kostkou")
+                                    font-awesome-icon(icon="dice-five" size="2x")
+                            div.ant-col-8(v-show="isRollTwoDiceVisible")
+                                button.action-button.ant-btn(:disabled="!isRollTwoDiceActive" @click="rollTwoDice" title="Hod 2 kostkami")
+                                    font-awesome-icon(icon="dice" size="2x")
+                            div.ant-col-8(v-show="isKeepDiceVisible")
+                                button.action-button.ant-btn(:disabled="!isKeepDiceActive" @click="keepDice" title="Nechat si kostky")
+                                    font-awesome-icon(icon="check" size="2x")
+                            div.ant-col-8(v-show="isRollAgainVisible")
+                                button.action-button.ant-btn(:disabled="!isRollAgainActive" @click="rollAgain" title="Hodit znovu")
+                                    font-awesome-icon(icon="redo-alt" size="2x")
+                            div.ant-col-8(v-show="isAddTwoToRollVisible")
+                                button.action-button.ant-btn.plus-two(:disabled="!isAddTwoToRollActive" @click="addTwoToRoll" title="Přidat k hodu 2") +2
+                            div.ant-col-8(v-show="isEndTurnVisible")
+                                button.action-button.ant-btn(:disabled="!isEndTurnActive" @click="endTurn" title="Ukončit tah")
+                                    font-awesome-icon(icon="power-off" size="2x")
                     div.ant-row
                         h3 Kostky
                         div.ant-row-flex.ant-row-flex-start.gutter-16(:style="{ height: '50px' }")
@@ -212,13 +227,6 @@ interface Table {
     bank: number;
     buyableCards: CardCount[];
 }
-interface ActionButton {
-    order: number;
-    text: string;
-    isVisible: () => boolean;
-    handler: () => void;
-    isActive: () => boolean;
-}
 
 interface Message {
     type: MessageType;
@@ -286,8 +294,6 @@ export default class GamePage extends Vue {
         [TurnPhase.PostBuild]: 'Po stavbě',
         [TurnPhase.EndTurn]: 'Konec tahu'
     };
-
-    private _buttons: ActionButton[] = [];
 
     private currentTurnPhase: TurnPhase = TurnPhase.DiceChoice;
 
@@ -549,11 +555,6 @@ export default class GamePage extends Vue {
         return this.isPlayerOnTurn && this.currentTurnPhase > TurnPhase.PurpleCards && !this.alreadyBought;
     }
     // </editor-fold>
-
-    get buttons () {
-        return this.$data._buttons
-            .sort((a: ActionButton, b: ActionButton) => a.order - b.order);
-    }
     // </editor-fold>
 
     emitEndTurn () {
@@ -1282,7 +1283,6 @@ export default class GamePage extends Vue {
             })),
             itCenterCoins: 0
         })));
-        this.setupActionButtons();
         // as a test, pre-fill sidebar messages with one of every type (so we can style them properly)
         const p1 = 'Chizu';
         const p2 = 'Gieen';
@@ -1308,53 +1308,6 @@ export default class GamePage extends Vue {
         );
         this.loaded = true;
         this.started = true;
-    }
-
-    setupActionButtons () {
-        this.$data._buttons = [
-            {
-                order: 0,
-                text: 'Hod 1 kostkou',
-                isVisible: () => this.isRollOneDiceVisible,
-                handler: this.rollOneDice,
-                isActive: () => this.isRollOneDiceActive
-            },
-            {
-                order: 1,
-                text: 'Hod 2 kostkami',
-                isVisible: () => this.isRollTwoDiceVisible,
-                handler: this.rollTwoDice,
-                isActive: () => this.isRollTwoDiceActive
-            },
-            {
-                order: 2,
-                text: 'Nechat si kostky',
-                isVisible: () => this.isKeepDiceVisible,
-                handler: this.keepDice,
-                isActive: () => this.isKeepDiceActive
-            },
-            {
-                order: 3,
-                text: 'Hodit znovu',
-                isVisible: () => this.isRollAgainVisible,
-                handler: this.rollAgain,
-                isActive: () => this.isRollAgainActive
-            },
-            {
-                order: 4,
-                text: 'Přidat k hodu 2',
-                isVisible: () => this.isAddTwoToRollVisible,
-                handler: this.addTwoToRoll,
-                isActive: () => this.isAddTwoToRollActive
-            },
-            {
-                order: 5,
-                text: 'Ukončit tah',
-                isVisible: () => this.isEndTurnVisible,
-                handler: this.endTurn,
-                isActive: () => this.isEndTurnActive
-            }
-        ];
     }
 
     get tvStudioModalTargets () {
@@ -1593,9 +1546,6 @@ export default class GamePage extends Vue {
                     })),
                     itCenterCoins: 0
                 })));
-                // has to be defined here, because getters are called before mounted()
-                // get buttons() iterates through _buttons and calls isVisible(), which puts us back at the start
-                this.setupActionButtons();
                 this.loaded = true;
             })
             .on(events.input.GAME_STARTING, () => {
@@ -1963,9 +1913,20 @@ export default class GamePage extends Vue {
     &.sidebar-blue {
         background-color: #89c5ff;
     }
-    .action-button {
-        width: 130px;
-        margin-bottom: 10px;
+    .buttons {
+        margin-left: 5px;
+
+        .action-button {
+            width: 50px;
+            height: 50px;
+            margin-bottom: 10px;
+            padding: 0;
+
+            &.plus-two {
+                font-size: x-large;
+                font-weight: bolder;
+            }
+        }
     }
     .messages {
         margin-left: 10px;
@@ -1997,9 +1958,6 @@ export default class GamePage extends Vue {
 .game-container {
     margin-left: 40px;
     margin-bottom: 50px;
-}
-.action-button {
-    margin-left: 10px;
 }
 .delimiter {
     margin-top: 15px;
