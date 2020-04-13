@@ -31,7 +31,9 @@
                 MachiKoroLogo
             div.lobby.ant-row
                 div.ant-col-16.ant-col-offset-4
-                    div.ant-row-flex.ant-row-flex-space-around
+                    div.ant-row-flex.ant-row-flex-center(v-if="loading")
+                        a-spin(size="large")
+                    div.ant-row-flex.ant-row-flex-space-around(v-else)
                         a-button(size="large" @click="createGame" v-if="gameSlug === ''") Vytvořit hru
                         a-button(size="large" @click="confirmReady" v-if="isPlayable") Jsem připraven
                         a-button(size="large" @click="declineReady" v-if="isPlayable" type="danger") Nejsem připraven
@@ -89,6 +91,7 @@ interface Dialog {
 export default class LobbyPage extends Vue {
     private socket!: SocketIOClient.Socket;
 
+    private loading: boolean = true;
     private selfId!: number;
     private isPlayable: boolean = false;
     private isOwner: boolean = false;
@@ -136,6 +139,7 @@ export default class LobbyPage extends Vue {
                 this.showDialog(this.joinNameDialog);
             }
         }
+        this.loading = false;
     }
 
     async createNameDialogOk () {
@@ -233,7 +237,7 @@ export default class LobbyPage extends Vue {
     }
 
     get canStartGame (): boolean {
-        return this.isOwner && this.players.every(p => p.ready);
+        return this.isOwner && this.isPlayable && this.players.every(p => p.ready);
     }
 
     createGame () {
